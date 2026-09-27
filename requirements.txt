@@ -1,0 +1,9 @@
+duckdb==1.5.5
+jupyter==1.1.1
+matplotlib==3.11.2
+nbconvert==7.17.1
+numpy==2.5.3
+pandas==3.0.6
+pytz==2026.4
+scipy==1.18.1
+statsmodels==0.15.0
