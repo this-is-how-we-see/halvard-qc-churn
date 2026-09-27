@@ -8,9 +8,9 @@
     ],
     "firmware_lr_chi2": 1645.925868074486,
     "firmware_p": 0.0,
-    "month_lr_chi2": 5.360522165202383,
+    "month_lr_chi2": 5.360522165203292,
     "month_df": 11,
-    "month_p": 0.9124581254437876
+    "month_p": 0.9124581254437374
   },
   "lot_same_window": {
     "affected": [
@@ -188,8 +188,8 @@
         "QC rejection": 5.779583718517189e-06
       },
       "tickets_per_site": {
-        "Direct (NA, APAC)": 5.8,
-        "EU (distributor)": 6.0
+        "EU (distributor)": 6.0,
+        "Direct (NA, APAC)": 5.8
       },
       "exposed_churn_eu_vs_direct": {
         "a": [
@@ -296,6 +296,20 @@
         "NA-East",
         "NA-West"
       ]
+    },
+    "monitor_backtest": {
+      "window_days": 7,
+      "small_window_runs": 10,
+      "rate_multiple": 3,
+      "first_flag_410": "2025-11-15",
+      "days_after_release": 10,
+      "defect_days_flagged": [
+        390,
+        399
+      ],
+      "other_flag_episodes": 230,
+      "other_flag_episodes_per_week": 4.4,
+      "combinations": 60
     }
   }
 }

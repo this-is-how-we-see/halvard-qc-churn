@@ -20,7 +20,8 @@ Part C is the customer story: tickets, response times and the renewal cost.
 
 Part D holds follow-up checks on Parts B and C: the European channel, app use,
 decisions made after the fix, a QC failure threshold, a baseline for normal churn,
-the smallest group worth reporting, and a range for the ARR estimate. These are
+the smallest group worth reporting, a backtest of the fleet QC monitor, and a range
+for the ARR estimate. These are
 exploratory. The primary test is the exposure comparison in Part B.
 """
 from pathlib import Path
@@ -769,6 +770,53 @@ def follow_ups(con, results):
     out["min_group_size"] = {"to_catch_double_normal": need,
                              "table": sizes.assign(churn_to_catch=sizes.churn_to_catch.round(3)).to_dict("records"),
                              "regions_meeting_it": reg[reg.meets_minimum].region.tolist()}
+
+    # D10. Backtest of the fleet QC monitor in BACKLOG_001. Each day, for every firmware,
+    # model and assay combination, count QC results over the trailing 7 days. Flag when the
+    # window has fewer than 10 runs and any failure, or 10 or more runs and a failure rate
+    # above 3 times the baseline (the model and assay rate on 4.0.0 and 4.0.2). No p-values:
+    # the rules are sensitive on purpose.
+    daily = con.execute("""
+        select i.model, r.assay_type as assay, r.firmware_version as fw, r.run_date as day,
+               count(*) filter (where r.qc_status in ('pass', 'fail')) as n,
+               count(*) filter (where r.qc_status = 'fail') as f
+        from stg_runs r join stg_instruments i using (instrument_id)
+        where r.fw_major >= 4 group by all
+    """).df()
+    mbase = con.execute("""
+        select i.model, r.assay_type as assay,
+               count(*) filter (where r.qc_status = 'fail') * 1.0
+                 / count(*) filter (where r.qc_status in ('pass', 'fail')) as baseline
+        from stg_runs r join stg_instruments i using (instrument_id)
+        where r.firmware_version in ('4.0.0', '4.0.2') group by all
+    """).df()
+    daily["day"] = pd.to_datetime(daily.day)
+    days = pd.date_range("2025-09-01", "2026-08-31", freq="D")
+    rows = []
+    for key, g in daily.groupby(["model", "assay", "fw"]):
+        g = g.set_index("day")[["n", "f"]].reindex(days, fill_value=0).rolling(7, min_periods=1).sum()
+        g["model"], g["assay"], g["fw"] = key
+        rows.append(g.rename_axis("day").reset_index())
+    roll = pd.concat(rows).merge(mbase, on=["model", "assay"])
+    roll = roll[roll.n > 0]
+    roll["rate"] = roll.f / roll.n
+    roll["flag"] = ((roll.n < 10) & (roll.f >= 1)) | ((roll.n >= 10) & (roll.rate > 3 * roll.baseline))
+    defect = (roll.model == "HX-200") & (roll.assay == "IA-Panel-3") & roll.fw.isin(AFFECTED)
+    flags = roll[roll.flag].copy()
+    flags["defect"] = defect[roll.flag]
+    flags.to_csv(TAB / "monitor_backtest_flags.csv", index=False)
+    # An episode is a run of consecutive flagged days for one combination: one thing to review.
+    other = flags[~flags.defect].sort_values(["model", "assay", "fw", "day"])
+    new_episode = other.groupby(["model", "assay", "fw"]).day.diff().dt.days.ne(1)
+    first = roll[defect & roll.flag & (roll.fw == "4.1.0")].day.min()
+    rel = pd.Timestamp(con.execute("select release_date from stg_firmware_releases where version = '4.1.0'").fetchone()[0])
+    out["monitor_backtest"] = {
+        "window_days": 7, "small_window_runs": 10, "rate_multiple": 3,
+        "first_flag_410": str(first.date()), "days_after_release": int((first - rel).days),
+        "defect_days_flagged": [int((defect & roll.flag).sum()), int(defect.sum())],
+        "other_flag_episodes": int(new_episode.sum()),
+        "other_flag_episodes_per_week": round(float(new_episode.sum()) / 52, 1),
+        "combinations": int(roll[["model", "assay", "fw"]].drop_duplicates().shape[0])}
 
     results["follow_ups"] = out
 
