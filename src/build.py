@@ -2,7 +2,7 @@
 
 Usage:  python src/build.py
 Reads:  data/raw/halvard_data_pack/*.csv
-Writes: output/halvard.duckdb, output/checks.md
+Writes: output/halvard.duckdb (staging views, site_renewal table), output/checks.md
 """
 from pathlib import Path
 import re
@@ -60,6 +60,7 @@ if __name__ == "__main__":
     con = connect()
     load_raw(con)
     run_sql_dir(con, "staging")
+    run_sql_dir(con, "marts")
     results = run_checks(con)
     write_checks(results)
     for name, desc, source, action, n in results:

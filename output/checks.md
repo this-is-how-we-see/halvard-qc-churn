@@ -34,3 +34,7 @@ Zero failing rows means the check passes.
 | `churned_date_in_window` | A churned site's missed renewal falls inside the window | Inference: churn is observed at a renewal inside the window | 0 | pass |  |
 | `active_date_after_extract` | An active or notice site's next renewal is after the extract date | Dictionary: renewal_date is the next renewal for active sites | 4 | **FAIL** | Approved: flag the sites (status_conflict) and leave them out of the churn comparison |
 | `renewal_on_anniversary` | Renewal date falls on the start date's anniversary | Inference: HaloCloud is an annual subscription | 0 | pass |  |
+| `mart_one_row_per_site` | site_renewal holds exactly one row for every site | Logic: the table is defined as one row per site | 0 | pass |  |
+| `mart_rates_in_range` | Every rate and share falls between 0 and 1 | Logic | 0 | pass |  |
+| `mart_runs_add_up` | QC pass, fail and skipped on 4.0.0 and later plus pre-4.0.0 runs equal all runs | Logic | 0 | pass |  |
+| `mart_qc_rules_applied` | Main-cohort sites without a clean QC rate are exactly the ones the two approved rules leave out | Logic: approved QC comparison rules 1 and 2 | 0 | pass |  |

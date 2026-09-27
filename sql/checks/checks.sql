@@ -108,3 +108,21 @@ select site_id, status, renewal_date from stg_subscriptions where status in ('ac
 -- check: renewal_on_anniversary | Renewal date falls on the start date's anniversary | Inference: HaloCloud is an annual subscription | Stop and investigate
 select site_id, start_date, renewal_date from stg_subscriptions
 where month(start_date) <> month(renewal_date) or day(start_date) <> day(renewal_date);
+
+-- check: mart_one_row_per_site | site_renewal holds exactly one row for every site | Logic: the table is defined as one row per site | Stop and investigate
+select site_id from stg_sites
+where site_id not in (select site_id from site_renewal)
+union all
+select site_id from site_renewal group by 1 having count(*) > 1;
+
+-- check: mart_rates_in_range | Every rate and share falls between 0 and 1 | Logic | Stop and investigate
+select site_id from site_renewal
+where qc_fail_rate not between 0 and 1 or qc_fail_rate_pre400 not between 0 and 1
+   or ia3_share not between 0 and 1 or fw_410_411_share not between 0 and 1;
+
+-- check: mart_runs_add_up | QC pass, fail and skipped on 4.0.0 and later plus pre-4.0.0 runs equal all runs | Logic | Stop and investigate
+select site_id from site_renewal where qc_pass + qc_fail + qc_skipped + runs_pre400 <> runs_90d;
+
+-- check: mart_qc_rules_applied | Main-cohort sites without a clean QC rate are exactly the ones the two approved rules leave out | Logic: approved QC comparison rules 1 and 2 | Stop and investigate
+select site_id from site_renewal
+where cohort = 'main' and ((qc_fail_rate is null) <> (not in_qc_comparison));
