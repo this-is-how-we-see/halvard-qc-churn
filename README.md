@@ -1,6 +1,6 @@
 # Halvard QC failures and HaloCloud churn
 
-Did QC failures drive HaloCloud churn at the last renewal, and would a Plus-tier QC alert have kept those sites? The short answer is in `FINDINGS.md`, the recommendation is in `PROPOSAL.md`, and the analysis walkthrough is in `notebooks/walkthrough.ipynb`.
+Did QC failures drive HaloCloud churn at the last renewal, and would a Plus-tier QC alert have kept those sites? The short answer is in `FINDINGS.md`, the recommendation is in `PROPOSAL.md`, and the analysis walkthrough is in `notebooks/walkthrough.md`. The runnable copy of the walkthrough is `notebooks/walkthrough.ipynb`.
 
 ## Setup
 
@@ -22,7 +22,7 @@ python src/analysis.py    # tests and tables: output/tables/, output/stats.json,
 python src/figures.py     # the remaining figures
 ```
 
-Every run starts from the raw CSVs and gives the same outputs. The DuckDB session runs in UTC, because the pack's timestamps are UTC and date casts depend on the session time zone. To rerun the notebook, run `jupyter nbconvert --to notebook --execute --inplace notebooks/walkthrough.ipynb`. GitHub also shows the notebook with its saved outputs, and nbviewer is a backup: https://nbviewer.org/github/this-is-how-we-see/halvard-qc-churn/blob/analysis/notebooks/walkthrough.ipynb
+Every run starts from the raw CSVs and gives the same outputs. The DuckDB session runs in UTC, because the pack's timestamps are UTC and date casts depend on the session time zone. To rerun the notebook, run `jupyter nbconvert --to notebook --execute --inplace notebooks/walkthrough.ipynb`. `notebooks/walkthrough.md` is a Markdown export of the executed notebook, because GitHub's notebook viewer doesn't load in every browser setup. nbviewer is another way to read the notebook: https://nbviewer.org/github/this-is-how-we-see/halvard-qc-churn/blob/analysis/notebooks/walkthrough.ipynb
 
 ## What's where
 
@@ -33,6 +33,7 @@ Every run starts from the raw CSVs and gives the same outputs. The DuckDB sessio
 | `sql/marts/site_renewal.sql` | One row per site, with its decision date and the 90 days before it |
 | `sql/checks/checks.sql` | 34 data checks, each with its rule and the rule's source |
 | `src/analysis.py` | Part A lot test, Part B churn comparison, Part C customer story, Part D follow-up checks |
+| `notebooks/` | The walkthrough: `walkthrough.md` to read on GitHub, `walkthrough.ipynb` to run |
 | `output/` | `checks.md`, `stats.json`, tables and figures |
 
 ## How the data was handled
