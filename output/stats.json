@@ -1,0 +1,59 @@
+{
+  "lot_model": {
+    "runs": 12223,
+    "firmware_odds_ratio": 19.437798122989406,
+    "firmware_or_ci": [
+      16.55436843941197,
+      22.82346181027196
+    ],
+    "firmware_lr_chi2": 1645.925868074486,
+    "firmware_p": 0.0,
+    "month_lr_chi2": 5.360522165203292,
+    "month_df": 11,
+    "month_p": 0.9124581254437374
+  },
+  "lot_same_window": {
+    "affected": [
+      578,
+      1449
+    ],
+    "unaffected": [
+      80,
+      2694
+    ],
+    "z": 31.005447918439895,
+    "p": 4.551980911911573e-211
+  },
+  "lot_event_time": {
+    "instruments": 361,
+    "before": [
+      271,
+      1001
+    ],
+    "after": [
+      41,
+      1080
+    ],
+    "upgrade_first": "2026-03-24",
+    "upgrade_last": "2026-08-28",
+    "paired_instruments": 261,
+    "lower_after": 123,
+    "same": 120,
+    "higher_after": 18,
+    "wilcoxon_p": 5.931774447413545e-17
+  },
+  "adoption": {
+    "weeks": 52,
+    "intercept": 0.028574874943422375,
+    "slope": 0.37609196749912843,
+    "r2": 0.9287427634791454,
+    "slope_p": 2.4345677054209007e-30
+  },
+  "regression": {
+    "main_sites": 404,
+    "main_churned": 65,
+    "check_sites": 360,
+    "check_churned": 59,
+    "main_pseudo_r2": 0.2932260253490716
+  }
+}

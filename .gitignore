@@ -5,3 +5,4 @@ __pycache__/
 data/
 output/*.duckdb
 output/*.duckdb.wal
+output/tables/sites_main.csv

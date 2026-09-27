@@ -1,0 +1,11 @@
+factor,renewed_median,churned_median
+qc_fail_rate,0.034482758620689655,0.05263157894736842
+runs_90d,33.0,26.0
+app_events_90d_est,340.0,170.0
+qc_review_90d_est,30.0,20.0
+tickets_90d,1.0,3.0
+median_first_response_hrs,9.2,11.8
+ia3_share,0.25,0.2426470588235294
+fw_410_411_share,0.0,0.3130612244897959
+n_instruments,2.0,2.0
+arr_usd,5600.0,5200.0
