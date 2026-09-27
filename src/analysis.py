@@ -19,7 +19,8 @@ among similar sites?
 Part C is the customer story: tickets, response times and the renewal cost.
 
 Part D holds follow-up checks on Parts B and C: the European channel, app use,
-decisions made after the fix, and a range for the ARR estimate. These are
+decisions made after the fix, a QC failure threshold, a baseline for normal churn,
+and a range for the ARR estimate. These are
 exploratory. The primary test is the exposure comparison in Part B.
 """
 from pathlib import Path
@@ -714,6 +715,34 @@ def follow_ups(con, results):
         "eu_churned_with_no_qc_ticket": [int(eu[~eu.filed].churn.sum()), int(eu.churn.sum())],
         "eu_filed_vs_none": fisher(kn(eu[eu.filed]), kn(eu[~eu.filed])),
         "filed_share": {"eu": [int(eu.filed.sum()), int(len(eu))], "direct": [int(di.filed.sum()), int(len(di))]}}
+    # D8. A baseline for normal churn, and limits that show when a group breaches it.
+    # The pack holds one renewal per site, so this is one cycle. Normal = sites that
+    # did not run the defect. A second check uses renewals decided before the defect
+    # reached the fleet (short_history; notice sites have not decided, so they drop).
+    base_k, base_n = kn(unexp)
+    lo, hi = wilson(base_k, base_n)
+    pre = con.execute("""select count(*) filter (where churned), count(*)
+                         from site_renewal where cohort = 'short_history' and status <> 'notice'""").fetchone()
+    p0 = base_k / base_n
+    def limit(n):
+        # Approximate 95% upper limit for a group of n sites: center line plus 1.96 standard errors.
+        return p0 + 1.96 * np.sqrt(p0 * (1 - p0) / n)
+    seg = rate_table(unexp, "segment", "churn")
+    seg.to_csv(TAB / "churn_baseline_by_segment.csv", index=False)
+    groups = [("Ran the affected firmware", exp), ("EU, ran the affected firmware", exp[exp.region == "EU"])]
+    s["quarter"] = s.decision_date.dt.to_period("Q").astype(str)
+    groups += [(f"All main-cohort renewals, {q}", g) for q, g in s.groupby("quarter")]
+    groups += [(f"Did not run the defect, {q}", g) for q, g in unexp.assign(
+        quarter=unexp.decision_date.dt.to_period("Q").astype(str)).groupby("quarter")]
+    lim = pd.DataFrame([{"group": name, "n": len(g), "churned": int(g.churn.sum()), "rate": g.churn.mean(),
+                         "upper_limit": limit(len(g)), "breach": bool(g.churn.mean() > limit(len(g)))}
+                        for name, g in groups])
+    lim.to_csv(TAB / "churn_vs_baseline_limits.csv", index=False)
+    out["churn_baseline"] = {
+        "normal": [base_k, base_n], "rate": float(p0), "ci_low": float(lo), "ci_high": float(hi),
+        "before_defect": [int(pre[0]), int(pre[1])],
+        "upper_limit_by_size": {str(n): float(limit(n)) for n in (50, 136, 300)}}
+
     results["follow_ups"] = out
 
     # Figure: three panels, one axis each.
