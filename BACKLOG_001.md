@@ -37,7 +37,7 @@ Then a chart shows the QC failure rate for each firmware, model and assay combin
 - The user can change the time range, and the flags follow the selected range.
 - The user can set the chart to an earlier date.
 - With the 2025-09-01 to 2026-08-31 telemetry and the date set to 2025-11-15, the chart flags HX-200, IA-Panel-3, 4.1.0. Across that year, it flags HX-200 IA-Panel-3 on 4.1.0 or 4.1.1 on 390 of the 399 days either ran, matching the backtest.
-- The pull request lists the other 230 flag episodes in the year, counted by combination. An episode is a run of consecutive flagged days for one combination.
+- The implementation pull request lists the other 230 flag episodes in the year, counted by combination, and `output/tables/monitor_backtest_flags.csv` already holds them by day. An episode is a run of consecutive flagged days for one combination.
 
 ## 4. Scope
 

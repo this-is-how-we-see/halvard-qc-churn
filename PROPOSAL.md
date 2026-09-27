@@ -35,6 +35,6 @@ The plan uses 238 of 240 hours. We'd propose that any request over 2 hours gets 
 ## How we'd know it worked
 
 - On last year's data, the view flags 4.1.0 10 days after release, and it checks every release daily.
-- A flagged release comes off most affected instruments within 14 days, against a median of 30 to 45 days for 4.1.2.
+- A flagged release comes off most affected instruments within 14 days, against a median of 30 days for 4.1.2.
 - The simulator pilot flags the 4.1.0 curve fit on the HX-200 before release.
 - At the Q1 2027 renewals, churn among sites that ran a flagged release stays inside its normal range.

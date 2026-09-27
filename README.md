@@ -58,7 +58,7 @@ No row was deleted and no value was changed without a stated reason.
 - App events are a 1-in-10 sample, scaled by 10.
 - The pack has no territory field and no HaloCloud version history.
 - KICKOFF assumed European tickets were undercounted because a distributor takes first-line support. They aren't: European sites log 6.0 tickets a site, against 5.8 for direct sites.
-- The 9 `notice` sites decided before the defect reached the fleet, so they count as exposed if they ever ran the affected firmware, not over a 90-day window.
+- The 9 `notice` sites' last renewal fell between 2025-09-13 and 2025-11-18, before the defect reached the fleet, so a 90-day window before it measures nothing. They count as exposed if they ever ran the affected firmware.
 - The primary test is the exposure comparison in Part B. The Part D checks came after seeing the data and are exploratory.
 - p-values below 0.05 are called significant, 0.05 to 0.25 a possible trend, and above 0.25 a place where we need more data.
 
