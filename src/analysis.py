@@ -20,7 +20,7 @@ Part C is the customer story: tickets, response times and the renewal cost.
 
 Part D holds follow-up checks on Parts B and C: the European channel, app use,
 decisions made after the fix, a QC failure threshold, a baseline for normal churn,
-and a range for the ARR estimate. These are
+the smallest group worth reporting, and a range for the ARR estimate. These are
 exploratory. The primary test is the exposure comparison in Part B.
 """
 from pathlib import Path
@@ -742,6 +742,33 @@ def follow_ups(con, results):
         "normal": [base_k, base_n], "rate": float(p0), "ci_low": float(lo), "ci_high": float(hi),
         "before_defect": [int(pre[0]), int(pre[1])],
         "upper_limit_by_size": {str(n): float(limit(n)) for n in (50, 136, 300)}}
+
+    # D9. The smallest group a churn rate is worth reporting for. An exact one-sided
+    # binomial test against normal churn, with a 5% false-alarm rate and an 80% chance
+    # of catching a real change. The one judgment is the size of change to catch.
+    # Power jumps up and down as n grows, so the answer is the first n after which
+    # power stays at 80% or more for the next 50 values.
+    def min_sites(p1, alpha=0.05, power=0.8, nmax=1500):
+        pw = []
+        for n in range(5, nmax):
+            k = int(stats.binom.isf(alpha, n, p0)) + 1
+            while stats.binom.sf(k - 1, n, p0) > alpha:
+                k += 1
+            pw.append((n, stats.binom.sf(k - 1, n, p1)))
+        for i, (n, _) in enumerate(pw):
+            if all(q >= power for _, q in pw[i:i + 50]):
+                return n
+    sizes = pd.DataFrame([{"change": name, "churn_to_catch": p1, "sites_needed": min_sites(p1)}
+                          for name, p1 in [("1.5 times normal", 1.5 * p0), ("double normal", 2 * p0),
+                                           ("the defect effect", exp.churn.mean()), ("triple normal", 3 * p0)]])
+    sizes.to_csv(TAB / "min_group_size.csv", index=False)
+    need = int(sizes.loc[sizes.change == "double normal", "sites_needed"].iloc[0])
+    reg = s.groupby("region").size().rename("sites").reset_index()
+    reg["meets_minimum"] = reg.sites >= need
+    reg.to_csv(TAB / "regions_vs_min_group_size.csv", index=False)
+    out["min_group_size"] = {"to_catch_double_normal": need,
+                             "table": sizes.assign(churn_to_catch=sizes.churn_to_catch.round(3)).to_dict("records"),
+                             "regions_meeting_it": reg[reg.meets_minimum].region.tolist()}
 
     results["follow_ups"] = out
 

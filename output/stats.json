@@ -8,9 +8,9 @@
     ],
     "firmware_lr_chi2": 1645.925868074486,
     "firmware_p": 0.0,
-    "month_lr_chi2": 5.360522165201473,
+    "month_lr_chi2": 5.360522165202383,
     "month_df": 11,
-    "month_p": 0.912458125443838
+    "month_p": 0.9124581254437876
   },
   "lot_same_window": {
     "affected": [
@@ -188,8 +188,8 @@
         "QC rejection": 5.779583718517189e-06
       },
       "tickets_per_site": {
-        "EU (distributor)": 6.0,
-        "Direct (NA, APAC)": 5.8
+        "Direct (NA, APAC)": 5.8,
+        "EU (distributor)": 6.0
       },
       "exposed_churn_eu_vs_direct": {
         "a": [
@@ -266,6 +266,36 @@
         "136": 0.16074035970436226,
         "300": 0.14366514546390124
       }
+    },
+    "min_group_size": {
+      "to_catch_double_normal": 82,
+      "table": [
+        {
+          "change": "1.5 times normal",
+          "churn_to_catch": 0.163,
+          "sites_needed": 269
+        },
+        {
+          "change": "double normal",
+          "churn_to_catch": 0.217,
+          "sites_needed": 82
+        },
+        {
+          "change": "the defect effect",
+          "churn_to_catch": 0.257,
+          "sites_needed": 47
+        },
+        {
+          "change": "triple normal",
+          "churn_to_catch": 0.325,
+          "sites_needed": 27
+        }
+      ],
+      "regions_meeting_it": [
+        "EU",
+        "NA-East",
+        "NA-West"
+      ]
     }
   }
 }
