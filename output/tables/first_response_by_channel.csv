@@ -1,0 +1,5 @@
+ticket_type,region_group,n,median,q25,q75
+All other,"Direct (NA, APAC)",1962,6.2,3.7,10.5
+All other,EU (distributor),905,17.8,11.1,28.8
+QC rejection,"Direct (NA, APAC)",48,6.199999999999999,3.95,12.15
+QC rejection,EU (distributor),23,22.8,10.3,34.45

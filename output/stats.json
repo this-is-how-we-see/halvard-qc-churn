@@ -78,7 +78,8 @@
     "notice_sites": 9,
     "notice_arr": 59700,
     "notice_sites_exposed": 5,
-    "notice_arr_exposed": 29600
+    "notice_arr_exposed": 29600,
+    "notice_exposure_rule": "ever ran the defect; all notice sites are short_history"
   },
   "ticket_filed_vs_churn": {
     "filed": [
@@ -90,5 +91,98 @@
       111
     ],
     "fisher_p": 0.3119530363051836
+  },
+  "follow_ups": {
+    "exposure_within_app_use": {
+      "pooled_odds_ratio": 1.8189582743657462,
+      "cmh_p": 0.04183250764599966,
+      "equal_odds_p": 0.9866065487909983
+    },
+    "decided_after_fix": {
+      "a": [
+        12,
+        52
+      ],
+      "b": [
+        14,
+        99
+      ],
+      "odds_ratio": 1.8214285714285714,
+      "p": 0.1798279576501213,
+      "sites_running_defect_after_fix": 36
+    },
+    "excess_arr_range": {
+      "excess_sites": 20.247457627118642,
+      "at_mean_arr_of_exposed_churned": 129294.47941888619,
+      "at_mean_arr_of_all_exposed": 135255.99451645065,
+      "churned_arr_minus_expected": 124950.84745762713
+    },
+    "eu_channel": {
+      "first_response_mannwhitney_p": {
+        "All other": 5.460704369345869e-192,
+        "QC rejection": 5.779583718517189e-06
+      },
+      "tickets_per_site": {
+        "EU (distributor)": 6.0,
+        "Direct (NA, APAC)": 5.8
+      },
+      "exposed_churn_eu_vs_direct": {
+        "a": [
+          21,
+          51
+        ],
+        "b": [
+          14,
+          85
+        ],
+        "odds_ratio": 3.55,
+        "p": 0.002185992179621924
+      },
+      "unexposed_churn_eu_vs_direct": {
+        "a": [
+          12,
+          84
+        ],
+        "b": [
+          20,
+          211
+        ],
+        "odds_ratio": 1.5916666666666666,
+        "p": 0.2987083102484236
+      },
+      "response_churned_vs_renewed": {
+        "sites": 31,
+        "churned": 5,
+        "median_churned": 14.8,
+        "median_renewed": 9.825,
+        "mannwhitney_p": 0.93578309340866
+      },
+      "eu_churned_with_no_qc_ticket": [
+        19,
+        21
+      ],
+      "eu_filed_vs_none": {
+        "a": [
+          2,
+          9
+        ],
+        "b": [
+          19,
+          42
+        ],
+        "odds_ratio": 0.3458646616541353,
+        "p": 0.2767726479498399
+      },
+      "filed_share": {
+        "eu": [
+          9,
+          51
+        ],
+        "direct": [
+          22,
+          85
+        ]
+      }
+    }
   }
 }

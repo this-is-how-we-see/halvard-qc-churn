@@ -3,7 +3,9 @@
 Usage:  python src/analysis.py   (run src/build.py first)
 Writes: output/tables/*.csv, output/stats.json,
         output/figures/lot_test_by_firmware.png, output/figures/lot_test_event_time.png,
-        output/figures/adoption_and_failures.png
+        output/figures/adoption_and_failures.png, output/figures/visible_before_fixed.png,
+        output/figures/churn_by_segment_region.png, output/figures/what_goes_with_churn.png,
+        output/figures/eu_support_churn.png
 
 Part A asks whether a bad QC control lot, rather than the firmware, can explain
 the HX-200 IA-Panel-3 failures. The pack has no lot data, so the test uses the
@@ -13,6 +15,12 @@ own firmware version.
 
 Part B is the comparison across sites: does QC failure still go with churn
 among similar sites?
+
+Part C is the customer story: tickets, response times and the renewal cost.
+
+Part D holds follow-up checks on Parts B and C: the European channel, app use,
+decisions made after the fix, and a range for the ARR estimate. These are
+exploratory. The primary test is the exposure comparison in Part B.
 """
 from pathlib import Path
 import json
@@ -390,6 +398,11 @@ def customer_story(con, results):
     exp, unexp = s[s.affected_exposure == "yes"], s[s.affected_exposure == "no"]
     base_churn = unexp.churn.mean()
     excess = exp.churn.sum() - base_churn * len(exp)
+    # Notice sites count as exposed if they EVER ran the defect, not in a 90-day
+    # window. All 9 are short_history: their decision dates (last renewal) fall
+    # 2025-09-13 to 2025-11-18, before or as the defect reached the fleet, so a
+    # window before the decision measures nothing. This is an at-risk signal,
+    # not a figure to add to the main-cohort excess.
     notice = con.execute("""
         with aff as (select distinct i.site_id from stg_runs r join stg_instruments i using (instrument_id)
                      where i.model = 'HX-200' and r.assay_type = 'IA-Panel-3'
@@ -414,6 +427,7 @@ def customer_story(con, results):
         "excess_arr": float(excess * ex_ch.arr_usd.mean()),
         "notice_sites": int(notice[0]), "notice_arr": int(notice[1]),
         "notice_sites_exposed": int(notice[2]), "notice_arr_exposed": int(notice[3]),
+        "notice_exposure_rule": "ever ran the defect; all notice sites are short_history",
     }
 
     # Filing a QC rejection ticket, among exposed sites.
@@ -560,6 +574,181 @@ def churn_figures(con, results):
     plt.close(fig)
 
 
+# ---------------------------------------------------------------- Part D
+
+def follow_ups(con, results):
+    """Exploratory checks on Parts B and C."""
+    s = pd.read_csv(TAB / "sites_main.csv", parse_dates=["decision_date"])
+    s["region_group"] = np.where(s.region == "EU", "EU (distributor)", "Direct (NA, APAC)")
+    exp, unexp = s[s.affected_exposure == "yes"], s[s.affected_exposure == "no"]
+    fix = pd.Timestamp(con.execute("select release_date from stg_firmware_releases where version = '4.1.2'").fetchone()[0])
+    out = {}
+
+    def fisher(a, b):
+        # Churn in group a against group b, as [churned, n] pairs.
+        t = [[a[0], a[1] - a[0]], [b[0], b[1] - b[0]]]
+        r = stats.fisher_exact(t)
+        return {"a": a, "b": b, "odds_ratio": float(r.statistic), "p": float(r.pvalue)}
+    kn = lambda d: [int(d.churn.sum()), int(len(d))]
+
+    # D1. App use. App events sit in the same 90 days as the decision, so low use
+    # can be a cause, a result of the defect, or a lab that already plans to leave.
+    # It stays out of the causal model; this asks only whether the exposure gap
+    # holds inside each app-use third.
+    rate_table(s, ["app_band", "affected_exposure"], "churn").to_csv(TAB / "churn_by_exposure_and_app_use.csv", index=False)
+    from statsmodels.stats.contingency_tables import StratifiedTable
+    tables = [pd.crosstab(g.affected_exposure, g.churn).reindex(index=["yes", "no"], columns=[1, 0]).values
+              for _, g in s.groupby("app_band", observed=True)]
+    st = StratifiedTable(tables)
+    out["exposure_within_app_use"] = {
+        "pooled_odds_ratio": float(st.oddsratio_pooled), "cmh_p": float(st.test_null_odds().pvalue),
+        "equal_odds_p": float(st.test_equal_odds().pvalue)}
+
+    # D2. Small cells behind the region and segment gaps.
+    rate_table(s, ["region_group", "segment", "affected_exposure"], "churn").to_csv(
+        TAB / "churn_by_exposure_region_segment.csv", index=False)
+
+    # D3. Sites that decided after 4.1.2 shipped. Their 90-day window can reach
+    # back before the fix, and the fleet took weeks to install it.
+    post = exp[exp.decision_date >= fix]
+    late = con.execute(f"""
+        select count(distinct m.site_id)
+        from site_renewal m
+        join stg_instruments i on i.site_id = m.site_id and i.model = 'HX-200'
+        join stg_runs r on r.instrument_id = i.instrument_id
+         and r.assay_type = 'IA-Panel-3' and r.firmware_version in ('4.1.0', '4.1.1')
+         and r.run_date >= date '{fix.date()}'
+         and r.run_date >= m.decision_date - interval 90 day and r.run_date < m.decision_date
+        where m.cohort = 'main' and m.decision_date >= date '{fix.date()}'
+    """).fetchone()[0]
+    out["decided_after_fix"] = {**fisher(kn(post), kn(unexp[unexp.decision_date >= fix])),
+                                "sites_running_defect_after_fix": int(late)}
+
+    # D4. Range for the excess ARR. Excess sites = exposed churned minus what the
+    # unexposed churn rate predicts. Three ways to price them.
+    base = unexp.churn.mean()
+    excess = exp.churn.sum() - base * len(exp)
+    ch = exp[exp.churn == 1]
+    out["excess_arr_range"] = {
+        "excess_sites": float(excess),
+        "at_mean_arr_of_exposed_churned": float(excess * ch.arr_usd.mean()),
+        "at_mean_arr_of_all_exposed": float(excess * exp.arr_usd.mean()),
+        "churned_arr_minus_expected": float(ch.arr_usd.sum() - base * exp.arr_usd.sum())}
+
+    # D5. The European channel. First response by channel and ticket type.
+    tk = con.execute("""
+        select case when s.region = 'EU' then 'EU (distributor)' else 'Direct (NA, APAC)' end as region_group,
+               case when t.category = 'qc_rejection' then 'QC rejection' else 'All other' end as ticket_type,
+               t.first_response_hours as hrs
+        from stg_support_tickets t join stg_sites s using (site_id)
+    """).df()
+    resp = tk.groupby(["ticket_type", "region_group"]).hrs.agg(
+        n="size", median="median", q25=lambda v: v.quantile(0.25), q75=lambda v: v.quantile(0.75)).reset_index()
+    resp.to_csv(TAB / "first_response_by_channel.csv", index=False)
+    mw = {t: float(stats.mannwhitneyu(g[g.region_group == "EU (distributor)"].hrs,
+                                      g[g.region_group != "EU (distributor)"].hrs).pvalue)
+          for t, g in tk.groupby("ticket_type")}
+    per_site = con.execute("""
+        select case when s.region = 'EU' then 'EU (distributor)' else 'Direct (NA, APAC)' end as g,
+               count(t.ticket_id) * 1.0 / count(distinct s.site_id)
+        from stg_sites s left join stg_support_tickets t using (site_id) group by 1
+    """).fetchall()
+    # Each exposed site's QC rejection tickets before its decision, any time in the window.
+    qt = con.execute("""
+        select t.site_id, count(*) as n_qc, median(t.first_response_hours) as median_response_hrs
+        from stg_support_tickets t join site_renewal m using (site_id)
+        where t.category = 'qc_rejection' and m.cohort = 'main' and cast(t.opened_ts as date) < m.decision_date
+        group by 1
+    """).df()
+    e = exp.merge(qt, on="site_id", how="left")
+    e["filed"] = e.n_qc.notna()
+    w = e[e.filed]
+    w[["site_id", "region", "churn", "n_qc", "median_response_hrs"]].sort_values("median_response_hrs").to_csv(
+        TAB / "exposed_sites_qc_ticket_response.csv", index=False)
+    eu, di = e[e.region_group == "EU (distributor)"], e[e.region_group != "EU (distributor)"]
+    out["eu_channel"] = {
+        "first_response_mannwhitney_p": mw, "tickets_per_site": {g: round(v, 1) for g, v in per_site},
+        "exposed_churn_eu_vs_direct": fisher(kn(eu), kn(di)),
+        "unexposed_churn_eu_vs_direct": fisher(kn(unexp[unexp.region == "EU"]), kn(unexp[unexp.region != "EU"])),
+        "response_churned_vs_renewed": {
+            "sites": int(len(w)), "churned": int(w.churn.sum()),
+            "median_churned": float(w[w.churn == 1].median_response_hrs.median()),
+            "median_renewed": float(w[w.churn == 0].median_response_hrs.median()),
+            "mannwhitney_p": float(stats.mannwhitneyu(w[w.churn == 1].median_response_hrs,
+                                                      w[w.churn == 0].median_response_hrs).pvalue)},
+        "eu_churned_with_no_qc_ticket": [int(eu[~eu.filed].churn.sum()), int(eu.churn.sum())],
+        "eu_filed_vs_none": fisher(kn(eu[eu.filed]), kn(eu[~eu.filed])),
+        "filed_share": {"eu": [int(eu.filed.sum()), int(len(eu))], "direct": [int(di.filed.sum()), int(len(di))]}}
+    results["follow_ups"] = out
+
+    # Figure: three panels, one axis each.
+    G, COL = ["Direct (NA, APAC)", "EU (distributor)"], {"Direct (NA, APAC)": BLUE, "EU (distributor)": ORANGE}
+    fig, axes = plt.subplots(3, 1, figsize=(9, 12.5), dpi=150, facecolor=SURFACE, gridspec_kw={"hspace": 0.7})
+    for ax in axes:
+        style(ax)
+        ax.grid(axis="y", visible=False)
+        ax.grid(axis="x", color=GRID, linewidth=0.8)
+
+    def head(ax, title, sub):
+        ax.text(0, 1.17, title, transform=ax.transAxes, fontsize=12, weight="bold", color=INK)
+        ax.text(0, 1.06, sub, transform=ax.transAxes, fontsize=9, color=INK_2)
+
+    def bars(ax, rows, xmax, xlabel):
+        y, ticks, labels = 0, [], []
+        for group in rows:
+            for label, g, val, lo, hi, note in group:
+                ax.barh(y, val, height=0.62, color=COL[g])
+                ax.plot([lo, hi], [y, y], color=INK, linewidth=1.3)
+                ax.text(hi + xmax * 0.015, y, note, va="center", fontsize=9, color=INK)
+                ticks.append(y); labels.append(f"{label}\n{g}"); y += 1
+            y += 0.5
+        ax.set_yticks(ticks, labels, fontsize=8.5)
+        ax.invert_yaxis(); ax.set_xlim(0, xmax); ax.set_xlabel(xlabel, color=INK_2, fontsize=9)
+
+    r = resp.set_index(["ticket_type", "region_group"])
+    bars(axes[0], [[(t, g, r.loc[(t, g), "median"], r.loc[(t, g), "q25"], r.loc[(t, g), "q75"],
+                     f"{r.loc[(t, g), 'median']:.1f} h  (n = {int(r.loc[(t, g), 'n']):,})") for g in G]
+                   for t in ["QC rejection", "All other"]],
+         42, "Hours to first human response  (bar = median, line = middle half of tickets)")
+    head(axes[0], "A.  European tickets wait longer, for every kind of ticket",
+         "All support tickets in the year, by sales channel. Mann-Whitney U, p < 0.001 for both ticket types")
+    rows = []
+    for x, lab in [("yes", "Ran the affected firmware"), ("no", "Did not")]:
+        grp = []
+        for g in G:
+            d = s[(s.affected_exposure == x) & (s.region_group == g)]
+            k, n = int(d.churn.sum()), len(d)
+            lo, hi = wilson(k, n)
+            grp.append((lab, g, 100 * k / n, 100 * lo, 100 * hi, f"{k / n:.1%}  ({k} of {n})"))
+        rows.append(grp)
+    bars(axes[1], rows, 70, "Sites that churned (%)  (line = 95% Wilson interval)")
+    ec = out["eu_channel"]
+    head(axes[1], "B.  European churn is high where the site ran the affected firmware",
+         f"Main cohort, {len(s)} sites. Fisher's exact test: ran it, p = {ec['exposed_churn_eu_vs_direct']['p']:.3f}; "
+         f"did not, p = {ec['unexposed_churn_eu_vs_direct']['p']:.2f}")
+    ax = axes[2]
+    rng = np.random.default_rng(7)
+    for i, (o, lab) in enumerate([(0, "Renewed"), (1, "Churned")]):
+        d = w[w.churn == o]
+        for g in G:
+            dd = d[d.region.eq("EU") == (g == G[1])]
+            ax.scatter(dd.median_response_hrs, i + rng.uniform(-0.13, 0.13, len(dd)), s=60, color=COL[g],
+                       edgecolor=SURFACE, linewidth=1.5, zorder=3, label=g if o == 0 else None)
+        m = d.median_response_hrs.median()
+        ax.plot([m, m], [i - 0.3, i + 0.3], color=INK, linewidth=2)
+        ax.text(m, i - 0.36, f"median {m:.1f} h", ha="center", fontsize=9, color=INK)
+    ax.set_yticks([0, 1], [f"Renewed\n({(w.churn == 0).sum()} sites)", f"Churned\n({(w.churn == 1).sum()} sites)"], fontsize=8.5)
+    ax.set_ylim(-0.7, 1.5); ax.invert_yaxis()
+    ax.set_xlabel("Median hours to first response on the site's QC rejection tickets", color=INK_2, fontsize=9)
+    ax.legend(frameon=False, loc="lower right", fontsize=9)
+    rc = ec["response_churned_vs_renewed"]
+    head(ax, "C.  Among sites that filed a QC ticket, churned sites did not wait longer",
+         f"Sites that ran the affected firmware and filed before their decision. Mann-Whitney U, p = {rc['mannwhitney_p']:.2f}; "
+         f"only {rc['churned']} churned")
+    fig.savefig(FIG / "eu_support_churn.png", facecolor=SURFACE, bbox_inches="tight")
+    plt.close(fig)
+
+
 if __name__ == "__main__":
     for d in (TAB, FIG):
         d.mkdir(parents=True, exist_ok=True)
@@ -571,5 +760,6 @@ if __name__ == "__main__":
     comparison(con, results)
     customer_story(con, results)
     churn_figures(con, results)
+    follow_ups(con, results)
     (OUT / "stats.json").write_text(json.dumps(results, indent=2))
     print(json.dumps(results, indent=2))
