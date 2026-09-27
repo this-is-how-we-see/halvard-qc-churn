@@ -623,6 +623,41 @@ def follow_ups(con, results):
     """).fetchone()[0]
     out["decided_after_fix"] = {**fisher(kn(post), kn(unexp[unexp.decision_date >= fix])),
                                 "sites_running_defect_after_fix": int(late)}
+    # When did those sites last run the affected firmware, and did the ones still
+    # running it after the fix churn more than the ones that had upgraded?
+    last = con.execute(f"""
+        select m.site_id, max(r.run_date) as last_affected_run
+        from site_renewal m
+        join stg_instruments i on i.site_id = m.site_id and i.model = 'HX-200'
+        join stg_runs r on r.instrument_id = i.instrument_id
+         and r.assay_type = 'IA-Panel-3' and r.firmware_version in ('4.1.0', '4.1.1')
+         and r.run_date < m.decision_date
+        where m.cohort = 'main' and m.decision_date >= date '{fix.date()}'
+        group by 1
+    """).df()
+    pl = post.merge(last, on="site_id", how="left")
+    pl["last_affected_run"] = pd.to_datetime(pl.last_affected_run)
+    still = pl[pl.last_affected_run >= fix]
+    upgraded = pl[~(pl.last_affected_run >= fix)]
+    out["decided_after_fix"]["still_running_vs_upgraded"] = {
+        **fisher(kn(still), kn(upgraded)),
+        "median_days_run_after_fix": float((still.last_affected_run - fix).dt.days.median()),
+        "max_days_run_after_fix": int((still.last_affected_run - fix).dt.days.max()),
+        "ran_it_within_30_days_of_renewal": int(((still.decision_date - still.last_affected_run).dt.days <= 30).sum())}
+
+    # D6. A QC failure threshold. The straight-line model asks whether each extra
+    # point of failures adds the same risk. This asks whether sites above 5%, one of
+    # the band edges set in Part B, churn more. Exploratory.
+    q = s[s.in_qc_comparison].copy()
+    q["above_5pct"] = q.qc_fail_rate > 0.05
+    thr = lambda d: fisher(kn(d[d.above_5pct]), kn(d[~d.above_5pct]))
+    out["qc_threshold_5pct"] = {"all_sites": thr(q),
+                                "did_not_run_defect": thr(q[q.affected_exposure == "no"]),
+                                "ran_defect": thr(q[q.affected_exposure == "yes"])}
+
+    # D7. European research labs, by exposure.
+    er = s[(s.region == "EU") & (s.segment == "research")]
+    out["eu_research_labs"] = fisher(kn(er[er.affected_exposure == "yes"]), kn(er[er.affected_exposure == "no"]))
 
     # D4. Range for the excess ARR. Excess sites = exposed churned minus what the
     # unexposed churn rate predicts. Three ways to price them.

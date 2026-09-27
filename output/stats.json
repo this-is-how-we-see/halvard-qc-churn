@@ -8,9 +8,9 @@
     ],
     "firmware_lr_chi2": 1645.925868074486,
     "firmware_p": 0.0,
-    "month_lr_chi2": 5.360522165202383,
+    "month_lr_chi2": 5.360522165197835,
     "month_df": 11,
-    "month_p": 0.9124581254437876
+    "month_p": 0.9124581254440393
   },
   "lot_same_window": {
     "affected": [
@@ -109,7 +109,72 @@
       ],
       "odds_ratio": 1.8214285714285714,
       "p": 0.1798279576501213,
-      "sites_running_defect_after_fix": 36
+      "sites_running_defect_after_fix": 36,
+      "still_running_vs_upgraded": {
+        "a": [
+          8,
+          36
+        ],
+        "b": [
+          4,
+          16
+        ],
+        "odds_ratio": 0.8571428571428571,
+        "p": 1.0,
+        "median_days_run_after_fix": 29.5,
+        "max_days_run_after_fix": 147,
+        "ran_it_within_30_days_of_renewal": 21
+      }
+    },
+    "qc_threshold_5pct": {
+      "all_sites": {
+        "a": [
+          35,
+          153
+        ],
+        "b": [
+          30,
+          251
+        ],
+        "odds_ratio": 2.1850282485875705,
+        "p": 0.005040528881627622
+      },
+      "did_not_run_defect": {
+        "a": [
+          10,
+          59
+        ],
+        "b": [
+          20,
+          209
+        ],
+        "odds_ratio": 1.9285714285714286,
+        "p": 0.15763921576338658
+      },
+      "ran_defect": {
+        "a": [
+          25,
+          94
+        ],
+        "b": [
+          10,
+          42
+        ],
+        "odds_ratio": 1.1594202898550725,
+        "p": 0.8332921647470408
+      }
+    },
+    "eu_research_labs": {
+      "a": [
+        14,
+        19
+      ],
+      "b": [
+        4,
+        18
+      ],
+      "odds_ratio": 9.8,
+      "p": 0.002918276139729929
     },
     "excess_arr_range": {
       "excess_sites": 20.247457627118642,
