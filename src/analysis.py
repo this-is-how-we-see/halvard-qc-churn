@@ -327,6 +327,239 @@ def comparison(con, results):
                              "main_pseudo_r2": float(main.prsquared)}
 
 
+# ---------------------------------------------------------------- Part C
+
+def customer_story(con, results):
+    """What users did after the failures began, how fast Halvard responded,
+    and what it cost in renewals."""
+    # QC rejection tickets and first response, by month.
+    t = con.execute("""
+        select strftime(cast(opened_ts as date), '%Y-%m') as month,
+               count(*) as tickets,
+               count(*) filter (where category = 'qc_rejection') as qc_rejection_tickets,
+               median(first_response_hours) filter (where category = 'qc_rejection') as qc_rejection_median_response_hrs
+        from stg_support_tickets group by 1 order by 1
+    """).df()
+    t.to_csv(TAB / "tickets_by_month.csv", index=False)
+
+    # Every QC rejection ticket, split by whether its site ever ran the defect.
+    q = con.execute("""
+        with aff as (select distinct i.site_id from stg_runs r join stg_instruments i using (instrument_id)
+                     where i.model = 'HX-200' and r.assay_type = 'IA-Panel-3'
+                       and r.firmware_version in ('4.1.0', '4.1.1'))
+        select case when s.region = 'EU' then 'EU (distributor)' else 'Direct (NA, APAC)' end as region_group,
+               t.site_id in (select site_id from aff) as site_ran_defect,
+               count(*) as qc_rejection_tickets,
+               median(t.first_response_hours) as median_first_response_hrs,
+               min(cast(t.opened_ts as date)) as first_ticket
+        from stg_support_tickets t join stg_sites s using (site_id)
+        where t.category = 'qc_rejection' group by 1, 2 order by 1, 2
+    """).df()
+    q.to_csv(TAB / "qc_rejection_tickets_by_region.csv", index=False)
+
+    # Detection: weekly HX-200 IA-Panel-3 runs on 4.1.0, tested against the 4.0.x baseline.
+    base = con.execute("""
+        select count(*) filter (where r.qc_status = 'fail') * 1.0
+               / count(*) filter (where r.qc_status in ('pass', 'fail'))
+        from stg_runs r join stg_instruments i using (instrument_id)
+        where i.model = 'HX-200' and r.assay_type = 'IA-Panel-3' and r.firmware_version in ('4.0.0', '4.0.2')
+    """).fetchone()[0]
+    d = con.execute("""
+        select date_trunc('week', r.run_date)::date as week,
+               count(*) filter (where r.qc_status in ('pass', 'fail')) as n,
+               count(*) filter (where r.qc_status = 'fail') as fails
+        from stg_runs r join stg_instruments i using (instrument_id)
+        where i.model = 'HX-200' and r.assay_type = 'IA-Panel-3' and r.firmware_version = '4.1.0'
+          and r.run_date < date '2025-12-15'
+        group by 1 order by 1
+    """).df()
+    d["rate"] = d.fails / d.n
+    d["p_vs_baseline"] = [stats.binomtest(int(f), int(n), base, alternative="greater").pvalue if n else np.nan
+                          for f, n in zip(d.fails, d.n)]
+    d.to_csv(TAB / "detection_weekly.csv", index=False)
+    clear = d[(d.p_vs_baseline < 0.001) & (d.n >= 20)].week.min()
+    first = con.execute("""select min(r.run_date) from stg_runs r join stg_instruments i using (instrument_id)
+                           where i.model = 'HX-200' and r.firmware_version = '4.1.0'""").fetchone()[0]
+    e117 = con.execute("select min(run_date) from stg_runs where error_code = 'E-117'").fetchone()[0]
+    fix = con.execute("select release_date from stg_firmware_releases where version = '4.1.2'").fetchone()[0]
+    rel = con.execute("select release_date from stg_firmware_releases where version = '4.1.0'").fetchone()[0]
+    first_ticket = q[q.site_ran_defect].first_ticket.min()
+
+    # Renewal cost: exposed main-cohort sites against the unexposed baseline.
+    s = pd.read_csv(TAB / "sites_main.csv", parse_dates=["decision_date"])
+    exp, unexp = s[s.affected_exposure == "yes"], s[s.affected_exposure == "no"]
+    base_churn = unexp.churn.mean()
+    excess = exp.churn.sum() - base_churn * len(exp)
+    notice = con.execute("""
+        with aff as (select distinct i.site_id from stg_runs r join stg_instruments i using (instrument_id)
+                     where i.model = 'HX-200' and r.assay_type = 'IA-Panel-3'
+                       and r.firmware_version in ('4.1.0', '4.1.1'))
+        select count(*), sum(arr_usd), count(*) filter (where site_id in (select site_id from aff)),
+               sum(arr_usd) filter (where site_id in (select site_id from aff))
+        from stg_subscriptions where status = 'notice'
+    """).fetchone()
+    ex_ch = exp[exp.churn == 1]
+    results["customer_story"] = {
+        "release_410": str(rel), "first_hx200_run_410": str(first), "first_e117": str(e117),
+        "signal_clear_week": str(clear), "first_qc_rejection_ticket": str(first_ticket), "fix_412": str(fix),
+        "days_signal_to_fix": int((pd.Timestamp(fix) - pd.Timestamp(clear)).days),
+        "days_first_ticket_to_fix": int((pd.Timestamp(fix) - pd.Timestamp(first_ticket)).days),
+        "baseline_fail_rate": float(base),
+        "qc_rejection_tickets_total": int(q.qc_rejection_tickets.sum()),
+        "qc_rejection_tickets_from_defect_sites": int(q[q.site_ran_defect].qc_rejection_tickets.sum()),
+        "exposed_sites": int(len(exp)), "exposed_churned": int(exp.churn.sum()),
+        "exposed_churned_before_fix": int((ex_ch.decision_date < pd.Timestamp(fix)).sum()),
+        "baseline_churn": float(base_churn), "excess_churned_sites": float(excess),
+        "exposed_churned_arr": int(ex_ch.arr_usd.sum()),
+        "excess_arr": float(excess * ex_ch.arr_usd.mean()),
+        "notice_sites": int(notice[0]), "notice_arr": int(notice[1]),
+        "notice_sites_exposed": int(notice[2]), "notice_arr_exposed": int(notice[3]),
+    }
+
+    # Filing a QC rejection ticket, among exposed sites.
+    ft = pd.crosstab(np.where(exp.qc_rejection_tickets_90d > 0, "filed", "none"), exp.churn)
+    fisher = stats.fisher_exact(ft.values)
+    results["ticket_filed_vs_churn"] = {
+        "filed": [int(ft.loc["filed", 1]), int(ft.loc["filed"].sum())],
+        "none": [int(ft.loc["none", 1]), int(ft.loc["none"].sum())], "fisher_p": float(fisher.pvalue)}
+
+    # The leadership chart: the defect was visible long before it was fixed.
+    w = con.execute("""
+        select date_trunc('week', r.run_date)::date as week,
+               count(*) filter (where r.qc_status = 'fail') * 1.0
+                 / nullif(count(*) filter (where r.qc_status in ('pass', 'fail')), 0) as rate
+        from stg_runs r join stg_instruments i using (instrument_id)
+        where i.model = 'HX-200' and r.assay_type = 'IA-Panel-3' and r.fw_major >= 4
+          and r.run_date >= date '2025-09-01' and date_trunc('week', r.run_date) < date '2026-08-31'
+        group by 1 order by 1
+    """).df()
+    tk = con.execute("""
+        select date_trunc('week', cast(opened_ts as date))::date as week, count(*) as n
+        from stg_support_tickets where category = 'qc_rejection' group by 1 order by 1
+    """).df()
+    fig, axes = plt.subplots(3, 1, figsize=(10, 7.4), dpi=160, facecolor=SURFACE, sharex=True,
+                             gridspec_kw={"height_ratios": [3, 1.6, 1.1]})
+    lo, hi = pd.Timestamp(clear), pd.Timestamp(fix)
+    marks = [(pd.Timestamp(rel), "4.1.0 released"), (lo, "signal clear in telemetry"),
+             (pd.Timestamp(first_ticket), "first QC rejection ticket"), (hi, "4.1.2 fix released")]
+    for ax in axes:
+        style(ax)
+        ax.axvspan(lo, hi, color=ORANGE, alpha=0.10, linewidth=0, zorder=0)
+        for day, _ in marks:
+            ax.axvline(day, color=INK_2, linewidth=1, linestyle=(0, (3, 3)), zorder=1)
+    ax = axes[0]
+    ax.plot(pd.to_datetime(w.week), w.rate, color=BLUE, linewidth=2.2, zorder=3)
+    ax.set_ylim(0, 0.32)
+    ax.yaxis.set_major_formatter(matplotlib.ticker.PercentFormatter(1.0, decimals=0))
+    ax.set_title("HX-200 IA-Panel-3 QC failure rate, whole fleet, weekly", loc="left", color=INK,
+                 fontsize=10.5, fontweight="bold")
+    ypos = [0.315, 0.285, 0.255, 0.315]
+    for (day, label), y in zip(marks, ypos):
+        ax.text(day, y, f" {label}", color=INK, fontsize=8, va="top")
+    cs = results["customer_story"]
+    ax.text(lo + (hi - lo) / 2, 0.02, f"{cs['days_signal_to_fix']} days visible but unfixed",
+            color=ORANGE, fontsize=9, fontweight="bold", ha="center")
+    ax = axes[1]
+    ax.bar(pd.to_datetime(tk.week), tk.n, width=5, color=ORANGE, zorder=3)
+    ax.set_title("QC rejection tickets per week, all sites", loc="left", color=INK, fontsize=10.5,
+                 fontweight="bold")
+    ax = axes[2]
+    for i, dday in enumerate(sorted(ex_ch.decision_date)):
+        ax.scatter(dday, 0.5, s=36, color="#e34948" if dday < hi else INK_2, zorder=3, linewidths=0)
+    ax.set_yticks([])
+    ax.set_ylim(0, 1)
+    ax.set_title(f"Renewal decisions of the {cs['exposed_churned']} churned sites that ran the affected firmware "
+                 f"({cs['exposed_churned_before_fix']} before the fix)", loc="left", color=INK,
+                 fontsize=10.5, fontweight="bold")
+    axes[2].xaxis.set_major_locator(matplotlib.dates.MonthLocator())
+    axes[2].xaxis.set_major_formatter(matplotlib.dates.DateFormatter("%b\n%Y"))
+    fig.text(0.01, 0.01, "Shaded: from the week the failure spike was statistically clear in fleet telemetry "
+             "(p < 0.001 against the 4.0.x baseline) to the 4.1.2 release. Red: decided before the fix.",
+             color=INK_2, fontsize=7.5)
+    fig.subplots_adjust(bottom=0.1, top=0.95, left=0.07, right=0.97, hspace=0.45)
+    fig.savefig(FIG / "visible_before_fixed.png", facecolor=SURFACE)
+    plt.close(fig)
+
+
+def churn_figures(con, results):
+    """Two figures that explain the comparison inside the figure itself."""
+    s = pd.read_csv(TAB / "sites_main.csv")
+    # Figure 1: churn by segment and by region, split by whether the site ran the affected firmware.
+    fig, axes = plt.subplots(1, 2, figsize=(10.5, 4.4), dpi=160, facecolor=SURFACE, sharey=True,
+                             gridspec_kw={"width_ratios": [3, 4]})
+    for ax, col, order, title in [
+            (axes[0], "segment", ["hospital_lab", "reference_lab", "research"], "By segment"),
+            (axes[1], "region", ["NA-East", "NA-West", "APAC", "EU"], "By region")]:
+        style(ax)
+        for j, (exp, color, label) in enumerate([("no", INK_2, "did not run the affected firmware"),
+                                                 ("yes", ORANGE, "ran the affected firmware")]):
+            t = rate_table(s[s.affected_exposure == exp], col, "churn").set_index(col).reindex(order)
+            x = np.arange(len(order)) + (j - 0.5) * 0.28
+            ax.errorbar(x, t.rate, yerr=[t.rate - t.ci_low, t.ci_high - t.rate], fmt="none",
+                        ecolor=color, elinewidth=1.2, capsize=3, alpha=0.8)
+            ax.scatter(x, t.rate, s=46, color=color, zorder=3, label=label)
+            for xi, r, n in zip(x, t.rate, t.n):
+                ax.text(xi + 0.05, r, f" {r:.0%}", color=INK, fontsize=8, va="center")
+        ax.set_xticks(range(len(order)))
+        ax.set_xticklabels([o.replace("_", " ") for o in order], fontsize=9, color=INK)
+        ax.set_title(title, loc="left", color=INK, fontsize=10.5, fontweight="bold")
+        ax.yaxis.set_major_formatter(matplotlib.ticker.PercentFormatter(1.0, decimals=0))
+    axes[0].set_ylim(0, 0.62)
+    axes[0].legend(loc="upper left", frameon=False, fontsize=8.5, labelcolor=INK)
+    fig.suptitle("Churn rate at the last renewal: the affected firmware roughly doubles it in every segment",
+                 x=0.01, ha="left", color=INK, fontsize=11.5, fontweight="bold")
+    fig.text(0.01, 0.01, "Main cohort, 431 sites. Each dot is the share of sites in that group that did not renew. "
+             "Bars: 95% Wilson intervals. NA-East is the one group where the firmware made no difference.",
+             color=INK_2, fontsize=7.5)
+    fig.subplots_adjust(bottom=0.16, top=0.86, left=0.06, right=0.98, wspace=0.08)
+    fig.savefig(FIG / "churn_by_segment_region.png", facecolor=SURFACE)
+    plt.close(fig)
+
+    # Figure 2: the affected-firmware model as a forest plot, explained in the figure.
+    t = pd.read_csv(TAB / "regression_exposure_no_mediators.csv")
+    names = {"C(affected_exposure)[T.yes]": "Ran the affected firmware (vs did not)",
+             "C(segment)[T.research]": "Research lab (vs hospital lab)",
+             "C(region, Treatment('NA-East'))[T.EU]": "EU (vs NA-East)",
+             "C(region, Treatment('NA-East'))[T.APAC]": "APAC (vs NA-East)",
+             "log_runs": "Run volume (per step on a log scale)",
+             "C(tier)[T.Plus]": "Plus tier (vs Basic)",
+             "C(region, Treatment('NA-East'))[T.NA-West]": "NA-West (vs NA-East)",
+             "C(segment)[T.reference_lab]": "Reference lab (vs hospital lab)"}
+    t = t[t.term.isin(names)].copy()
+    t["label"] = t.term.map(names)
+    t = t.sort_values("odds_ratio")
+    fig, ax = plt.subplots(figsize=(10, 4.6), dpi=160, facecolor=SURFACE)
+    style(ax)
+    ax.grid(axis="y", visible=False)
+    ax.grid(axis="x", color=GRID, linewidth=0.8)
+    y = np.arange(len(t))
+    sig = t.p_value < 0.05
+    ax.hlines(y, t.ci_low, t.ci_high, color=[ORANGE if v else INK_2 for v in sig], linewidth=2)
+    ax.scatter(t.odds_ratio, y, s=60, color=[ORANGE if v else INK_2 for v in sig], zorder=3)
+    for yi, (o, lo, hi, p) in enumerate(zip(t.odds_ratio, t.ci_low, t.ci_high, t.p_value)):
+        ax.text(max(hi, o) * 1.08, yi, f"{o:.1f}x  (p = {p:.3f})" if p >= 0.001 else f"{o:.1f}x  (p < 0.001)",
+                color=INK, fontsize=8.5, va="center")
+    ax.axvline(1, color=INK, linewidth=1)
+    ax.set_xscale("log")
+    ax.set_xlim(0.12, 14)
+    ax.set_xticks([0.25, 0.5, 1, 2, 4, 8])
+    ax.set_xticklabels(["0.25x", "0.5x", "1x", "2x", "4x", "8x"])
+    ax.set_yticks(y)
+    ax.set_yticklabels(t.label, fontsize=9, color=INK)
+    ax.text(0.95, len(t) - 0.1, "less likely to churn  ", ha="right", color=INK_2, fontsize=8.5)
+    ax.text(1.05, len(t) - 0.1, "  more likely to churn", ha="left", color=INK_2, fontsize=8.5)
+    ax.set_ylim(-0.6, len(t) + 0.4)
+    fig.suptitle("What goes with churn when the other factors are held equal", x=0.01, ha="left", color=INK,
+                 fontsize=11.5, fontweight="bold")
+    fig.text(0.01, 0.015, "Each row compares sites that differ in that one factor but match on all the others shown. "
+             "2x means twice the odds of not renewing.\nOrange: significant (p < 0.05). Line: 95% interval; a line "
+             "that crosses 1x means no clear difference. 431 sites, logistic regression.",
+             color=INK_2, fontsize=7.5)
+    fig.subplots_adjust(bottom=0.17, top=0.9, left=0.3, right=0.97)
+    fig.savefig(FIG / "what_goes_with_churn.png", facecolor=SURFACE)
+    plt.close(fig)
+
+
 if __name__ == "__main__":
     for d in (TAB, FIG):
         d.mkdir(parents=True, exist_ok=True)
@@ -336,5 +569,7 @@ if __name__ == "__main__":
     lot_test(con, results)
     adoption(con, results)
     comparison(con, results)
+    customer_story(con, results)
+    churn_figures(con, results)
     (OUT / "stats.json").write_text(json.dumps(results, indent=2))
     print(json.dumps(results, indent=2))

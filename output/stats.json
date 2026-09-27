@@ -8,9 +8,9 @@
     ],
     "firmware_lr_chi2": 1645.925868074486,
     "firmware_p": 0.0,
-    "month_lr_chi2": 5.360522165203292,
+    "month_lr_chi2": 5.360522165202383,
     "month_df": 11,
-    "month_p": 0.9124581254437374
+    "month_p": 0.9124581254437876
   },
   "lot_same_window": {
     "affected": [
@@ -55,5 +55,40 @@
     "check_sites": 360,
     "check_churned": 59,
     "main_pseudo_r2": 0.2932260253490716
+  },
+  "customer_story": {
+    "release_410": "2025-11-05",
+    "first_hx200_run_410": "2025-11-08",
+    "first_e117": "2025-11-15",
+    "signal_clear_week": "2025-11-24 00:00:00",
+    "first_qc_rejection_ticket": "2025-11-19 00:00:00",
+    "fix_412": "2026-03-20",
+    "days_signal_to_fix": 116,
+    "days_first_ticket_to_fix": 121,
+    "baseline_fail_rate": 0.030092879256965945,
+    "qc_rejection_tickets_total": 71,
+    "qc_rejection_tickets_from_defect_sites": 71,
+    "exposed_sites": 136,
+    "exposed_churned": 35,
+    "exposed_churned_before_fix": 23,
+    "baseline_churn": 0.10847457627118644,
+    "excess_churned_sites": 20.247457627118642,
+    "exposed_churned_arr": 223500,
+    "excess_arr": 129294.47941888619,
+    "notice_sites": 9,
+    "notice_arr": 59700,
+    "notice_sites_exposed": 5,
+    "notice_arr_exposed": 29600
+  },
+  "ticket_filed_vs_churn": {
+    "filed": [
+      4,
+      25
+    ],
+    "none": [
+      31,
+      111
+    ],
+    "fisher_p": 0.3119530363051836
   }
 }
