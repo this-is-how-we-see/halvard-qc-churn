@@ -1,11 +1,11 @@
 # Check-in
 
-As suspected, QC failures went with the lost renewals at the last cycle. The failures came from the IA-Panel-3 curve-fit problem that Halvard corrected in 4.1.2, and the data confirms it. IA-Panel-3 on the HX-200 failed QC 38% of the time on 4.1.0 and 42% on 4.1.1, against about 3% on other firmware. Sites that ran IA-Panel-3 on the affected firmware churned at 25.7%, against 10.8% for the rest.
+As suspected, QC failures went with the lost renewals at the last cycle. The failures came from the IA-Panel-3 curve-fit problem that Halvard corrected in 4.1.2, and the data confirms it. IA-Panel-3 on the HX-200 failed QC 38% of the time on 4.1.0 and 42% on 4.1.1, against about 3% on other firmware. Sites that ran IA-Panel-3 on the affected firmware churned at 25.7%, more than twice the normal rate of about 11% a year.
 
 ## Significant findings (p below 0.05)
 
 - Sites that ran the affected firmware had 2.3 times the odds of churning, with region, segment, tier and run volume held equal (p = 0.005).
-- The failures follow each instrument's own upgrade, not the calendar, so a bad control lot doesn't explain them. Across 361 instruments, the failure rate fell from 27% before the upgrade to 4% after it (p < 0.001).
+- Each instrument's failures started when it installed 4.1.0 and stopped when it installed 4.1.2, whatever the date. A bad control lot would raise failures at every lab that used it in the same weeks. Across 361 instruments, the failure rate fell from 27% before the upgrade to 4% after it (p < 0.001).
 - Telemetry showed the defect clearly 19 days after 4.1.0 shipped (p < 0.001 against the 3% baseline). 4.1.2 shipped 116 days after that, and 49 HX-200s were still on 4.1.0 at the end of August.
 - Sites with a QC failure rate above 5% churned at 23%, against 12% for sites at or below 5% (p = 0.005). Most of the sites above 5% ran the affected firmware.
 - European sites that ran the affected firmware churned at 41%, against 16% for direct sites (p = 0.002). European research labs account for much of it: 14 of 19 churned, against 4 of 18 European research labs that didn't run it (p = 0.003).
