@@ -6,11 +6,11 @@
       16.55436843941197,
       22.82346181027196
     ],
-    "firmware_lr_chi2": 1645.925868074486,
+    "firmware_lr_chi2": 1645.9258680744852,
     "firmware_p": 0.0,
-    "month_lr_chi2": 5.360522165203292,
+    "month_lr_chi2": 5.360522165196926,
     "month_df": 11,
-    "month_p": 0.9124581254437374
+    "month_p": 0.9124581254440896
   },
   "lot_same_window": {
     "affected": [
@@ -188,8 +188,8 @@
         "QC rejection": 5.779583718517189e-06
       },
       "tickets_per_site": {
-        "EU (distributor)": 6.0,
-        "Direct (NA, APAC)": 5.8
+        "Direct (NA, APAC)": 5.8,
+        "EU (distributor)": 6.0
       },
       "exposed_churn_eu_vs_direct": {
         "a": [
@@ -310,6 +310,10 @@
       "other_flag_episodes": 230,
       "other_flag_episodes_per_week": 4.4,
       "combinations": 60
+    },
+    "still_on_affected_at_extract": {
+      "HX-200 4.1.0": 49,
+      "HX-200 Plus 4.1.0": 27
     }
   }
 }

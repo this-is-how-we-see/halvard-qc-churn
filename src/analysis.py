@@ -20,8 +20,8 @@ Part C is the customer story: tickets, response times and the renewal cost.
 
 Part D holds follow-up checks on Parts B and C: the European channel, app use,
 decisions made after the fix, a QC failure threshold, a baseline for normal churn,
-the smallest group worth reporting, a backtest of the fleet QC monitor, and a range
-for the ARR estimate. These are
+the smallest group worth reporting, a backtest of the fleet QC monitor, instruments
+still on the affected firmware, and a range for the ARR estimate. These are
 exploratory. The primary test is the exposure comparison in Part B.
 """
 from pathlib import Path
@@ -817,6 +817,14 @@ def follow_ups(con, results):
         "other_flag_episodes": int(new_episode.sum()),
         "other_flag_episodes_per_week": round(float(new_episode.sum()) / 52, 1),
         "combinations": int(roll[["model", "assay", "fw"]].drop_duplicates().shape[0])}
+
+    # D11. Instruments still on the affected firmware at the extract date, from
+    # instruments.firmware_version_current (the dictionary: firmware at extract).
+    still = con.execute("""
+        select model, firmware_version_current as fw, count(*) as n from stg_instruments
+        where firmware_version_current in ('4.1.0', '4.1.1') group by all order by all
+    """).df()
+    out["still_on_affected_at_extract"] = {f"{r.model} {r.fw}": int(r.n) for r in still.itertuples()}
 
     results["follow_ups"] = out
 
