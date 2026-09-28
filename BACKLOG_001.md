@@ -6,7 +6,7 @@
 
 HaloCloud gives Halvard's product and quality teams no fleet-wide view of QC failure rates by firmware version.
 
-Every HX-200 reports each run's QC result, and HaloCloud's fleet dashboard already uses instrument telemetry, but no view compares QC results across all customers by firmware, model and assay. When 4.1.0 raised IA-Panel-3 failures on the HX-200 from about 3% to about 40%, the signal was in the telemetry within 2 weeks of release, and it stayed there for 116 days until 4.1.2 fixed it. In that time, labs filed QC rejection tickets, and 35 sites that ran the affected firmware did not renew.
+Every HX-200 reports each run's QC result, and HaloCloud's fleet dashboard already uses instrument telemetry, but no view compares QC results across all customers by firmware, model and assay. When 4.1.0 raised IA-Panel-3 failures on the HX-200 from about 3% to about 40%, the signal was in the telemetry within 19 days of release, and it stayed there for 116 days until 4.1.2 fixed it. In that time, labs filed QC rejection tickets, and 35 sites that ran the affected firmware did not renew.
 
 **User need:** as a Halvard user responsible for firmware quality, I need a rolling HaloCloud view of QC failure rates for each firmware version, by model and assay, compared with the previous validated version, so that I can see a failing release within days of rollout and decide whether to hold it.
 
