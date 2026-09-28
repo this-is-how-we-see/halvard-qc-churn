@@ -856,6 +856,136 @@ display(table("churn_by_exposure_region_segment"))
 </div>
 
 
+**Region and lab type together.** The same counts on a schematic map, one panel per region and one
+slot per lab type. Bubble area is lost sites, and the orange wedge is the part that ran the
+affected firmware. Every group is under the 80-site minimum, so only the European research-lab
+rate is printed, because it is the one group with a test behind it (Fisher's exact, above).
+
+
+```python
+display(table("lost_by_region_and_lab"))
+figure("lost_by_region_and_lab")
+```
+
+
+<div>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>region</th>
+      <th>segment</th>
+      <th>sites</th>
+      <th>lost</th>
+      <th>exposed_lost</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>APAC</td>
+      <td>hospital_lab</td>
+      <td>25</td>
+      <td>4</td>
+      <td>2</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>APAC</td>
+      <td>reference_lab</td>
+      <td>18</td>
+      <td>0</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>APAC</td>
+      <td>research</td>
+      <td>19</td>
+      <td>5</td>
+      <td>2</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>EU</td>
+      <td>hospital_lab</td>
+      <td>62</td>
+      <td>10</td>
+      <td>4</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>EU</td>
+      <td>reference_lab</td>
+      <td>36</td>
+      <td>5</td>
+      <td>3</td>
+    </tr>
+    <tr>
+      <th>5</th>
+      <td>EU</td>
+      <td>research</td>
+      <td>37</td>
+      <td>18</td>
+      <td>14</td>
+    </tr>
+    <tr>
+      <th>6</th>
+      <td>NA-East</td>
+      <td>hospital_lab</td>
+      <td>67</td>
+      <td>6</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>7</th>
+      <td>NA-East</td>
+      <td>reference_lab</td>
+      <td>22</td>
+      <td>1</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>8</th>
+      <td>NA-East</td>
+      <td>research</td>
+      <td>33</td>
+      <td>8</td>
+      <td>3</td>
+    </tr>
+    <tr>
+      <th>9</th>
+      <td>NA-West</td>
+      <td>hospital_lab</td>
+      <td>53</td>
+      <td>5</td>
+      <td>4</td>
+    </tr>
+    <tr>
+      <th>10</th>
+      <td>NA-West</td>
+      <td>reference_lab</td>
+      <td>21</td>
+      <td>2</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>11</th>
+      <td>NA-West</td>
+      <td>research</td>
+      <td>38</td>
+      <td>3</td>
+      <td>1</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+
+
+![lost_by_region_and_lab](https://raw.githubusercontent.com/this-is-how-we-see/halvard-qc-churn/analysis/output/figures/lost_by_region_and_lab.png)
+
+
 **App use.** *Cochran-Mantel-Haenszel test:* compares sites that did and did not run the affected
 firmware inside each third of HaloCloud use, then combines the three comparisons.
 

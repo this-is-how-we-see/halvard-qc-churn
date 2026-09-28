@@ -5,7 +5,7 @@ Writes: output/tables/*.csv, output/stats.json,
         output/figures/lot_test_by_firmware.png, output/figures/lot_test_event_time.png,
         output/figures/adoption_and_failures.png, output/figures/visible_before_fixed.png,
         output/figures/churn_by_segment_region.png, output/figures/what_goes_with_churn.png,
-        output/figures/eu_support_churn.png
+        output/figures/eu_support_churn.png, output/figures/lost_by_region_and_lab.png
 
 Part A asks whether a bad QC control lot, rather than the firmware, can explain
 the HX-200 IA-Panel-3 failures. The pack has no lot data, so the test uses the
@@ -937,6 +937,70 @@ def follow_ups(con, results):
     plt.close(fig)
 
 
+def lost_by_region_and_lab():
+    """Schematic map: lost renewals by region and lab type.
+
+    Each region gets its own panel, west to east, and each lab type its own slot,
+    so no bubble can sit on another. Bubble area is the count of lost sites; the
+    orange wedge is the part that ran the affected firmware. Every cell is under
+    the 80-site minimum, so only the European research-lab rate is printed: it is
+    the one cell with a test behind it (D7).
+    """
+    s = pd.read_csv(TAB / "sites_main.csv")
+    t = (s.assign(exposed_lost=(s.affected_exposure == "yes") & (s.churn == 1))
+          .groupby(["region", "segment"])
+          .agg(sites=("site_id", "size"), lost=("churn", "sum"), exposed_lost=("exposed_lost", "sum"))
+          .reset_index())
+    t.to_csv(TAB / "lost_by_region_and_lab.csv", index=False)
+
+    REGIONS = [("NA-West", "NA-West"), ("NA-East", "NA-East"), ("EU", "Europe"), ("APAC", "APAC")]
+    LABS = [("hospital_lab", "Hospital", GREY), ("reference_lab", "Reference", "#d3d1cb"), ("research", "Research", BLUE)]
+    fig, ax = slide("European research labs had the highest churn",
+                    "Lost renewals at the last cycle, by region and lab type. Bubble area is the number of lost sites.",
+                    "Source: Halvard subscriptions and telemetry, 431 sites with 90 days of data before renewal. Regions are arranged "
+                    "west to east, not to scale.\nEvery group here is under 80 sites, so only the European research-lab rate is "
+                    "shown: 14 of 19 that ran the affected firmware were lost, against 4 of 18 that didn't.")
+    legend_row(fig, [(c, f"{name} labs") for _, name, c in LABS] + [(ORANGE, "Lost sites that ran the affected firmware")])
+    ax.set_position([0.04, 0.15, 0.92, 0.64])
+    ax.grid(False)
+    ax.spines["bottom"].set_visible(False)
+    ax.set_xticks([]), ax.set_yticks([])
+    ax.set_xlim(0, 4), ax.set_ylim(0, 1.3)
+    ax.set_aspect("equal")
+    rmax, slot = 0.14, 0.3
+    top = t.lost.max()
+    for i, (code, label) in enumerate(REGIONS):
+        cx = i + 0.5
+        ax.add_patch(matplotlib.patches.FancyBboxPatch((i + 0.04, 0.06), 0.92, 1.18, boxstyle="round,pad=0,rounding_size=0.04",
+                                                       facecolor="#f3f2ee", edgecolor="none", zorder=0))
+        n_sites = int(t[t.region == code].sites.sum())
+        ax.text(cx, 1.12, label, ha="center", va="center", fontsize=13, fontweight="bold", color=INK)
+        ax.text(cx, 1.02, f"{n_sites} sites", ha="center", va="center", fontsize=10.5, color=INK_2)
+        for j, (seg, name, color) in enumerate(LABS):
+            row = t[(t.region == code) & (t.segment == seg)].iloc[0]
+            x, y = cx + (j - 1) * slot, 0.68
+            lost, exp_lost = int(row.lost), int(row.exposed_lost)
+            if lost == 0:
+                ax.add_patch(matplotlib.patches.Circle((x, y), 0.02, facecolor="none", edgecolor=INK_2, linewidth=1, zorder=2))
+            else:
+                r = rmax * np.sqrt(lost / top)
+                share = exp_lost / lost
+                ax.add_patch(matplotlib.patches.Wedge((x, y), r, 90, 90 + 360 * (1 - share), facecolor=color,
+                                                      edgecolor=SURFACE, linewidth=1.5, zorder=2))
+                if exp_lost:
+                    ax.add_patch(matplotlib.patches.Wedge((x, y), r, 90 - 360 * share, 90, facecolor=ORANGE,
+                                                          edgecolor=SURFACE, linewidth=1.5, zorder=3))
+            highlight = code == "EU" and seg == "research"
+            ax.text(x, 0.43, name, ha="center", va="center", fontsize=9.5, color=INK)
+            ax.text(x, 0.33, f"{lost} of {int(row.sites)}", ha="center", va="center", fontsize=10.5,
+                    color=INK, fontweight="bold" if highlight else "normal")
+            if highlight:
+                ax.text(x, 0.2, f"{lost / row.sites:.0%} lost", ha="center", va="center", fontsize=10.5,
+                        color=INK, fontweight="bold")
+    fig.savefig(FIG / "lost_by_region_and_lab.png", facecolor=SURFACE)
+    plt.close(fig)
+
+
 if __name__ == "__main__":
     for d in (TAB, FIG):
         d.mkdir(parents=True, exist_ok=True)
@@ -949,5 +1013,6 @@ if __name__ == "__main__":
     customer_story(con, results)
     churn_figures(con, results)
     follow_ups(con, results)
+    lost_by_region_and_lab()
     (OUT / "stats.json").write_text(json.dumps(results, indent=2))
     print(json.dumps(results, indent=2))

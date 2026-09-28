@@ -1,0 +1,13 @@
+region,segment,sites,lost,exposed_lost
+APAC,hospital_lab,25,4,2
+APAC,reference_lab,18,0,0
+APAC,research,19,5,2
+EU,hospital_lab,62,10,4
+EU,reference_lab,36,5,3
+EU,research,37,18,14
+NA-East,hospital_lab,67,6,1
+NA-East,reference_lab,22,1,0
+NA-East,research,33,8,3
+NA-West,hospital_lab,53,5,4
+NA-West,reference_lab,21,2,1
+NA-West,research,38,3,1
