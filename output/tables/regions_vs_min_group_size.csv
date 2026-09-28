@@ -1,0 +1,5 @@
+region,sites,meets_minimum
+APAC,62,False
+EU,135,True
+NA-East,122,True
+NA-West,112,True

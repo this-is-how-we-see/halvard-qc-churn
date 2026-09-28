@@ -1,0 +1,734 @@
+{
+  "lot_model": {
+    "runs": 12223,
+    "firmware_odds_ratio": 19.437798122989406,
+    "firmware_or_ci": [
+      16.55436843941197,
+      22.82346181027196
+    ],
+    "firmware_lr_chi2": 1645.9258680744852,
+    "firmware_p": 0.0,
+    "month_lr_chi2": 5.360522165201473,
+    "month_df": 11,
+    "month_p": 0.912458125443838
+  },
+  "lot_same_window": {
+    "affected": [
+      578,
+      1449
+    ],
+    "unaffected": [
+      80,
+      2694
+    ],
+    "z": 31.005447918439895,
+    "p": 4.551980911911573e-211
+  },
+  "lot_event_time": {
+    "instruments": 361,
+    "before": [
+      271,
+      1001
+    ],
+    "after": [
+      41,
+      1080
+    ],
+    "upgrade_first": "2026-03-24",
+    "upgrade_last": "2026-08-28",
+    "paired_instruments": 261,
+    "lower_after": 123,
+    "same": 120,
+    "higher_after": 18,
+    "wilcoxon_p": 5.931774447413545e-17
+  },
+  "adoption": {
+    "weeks": 52,
+    "intercept": 0.028574874943422375,
+    "slope": 0.37609196749912843,
+    "r2": 0.9287427634791454,
+    "slope_p": 2.4345677054209007e-30
+  },
+  "regression": {
+    "sites": 431,
+    "churned": 67,
+    "pseudo_r2": 0.1149328595058271
+  },
+  "customer_story": {
+    "release_410": "2025-11-05",
+    "first_hx200_run_410": "2025-11-08",
+    "first_e117": "2025-11-15",
+    "signal_clear_week": "2025-11-24 00:00:00",
+    "first_qc_rejection_ticket": "2025-11-19 00:00:00",
+    "fix_412": "2026-03-20",
+    "days_signal_to_fix": 116,
+    "days_first_ticket_to_fix": 121,
+    "baseline_fail_rate": 0.030092879256965945,
+    "qc_rejection_tickets_total": 71,
+    "qc_rejection_tickets_from_defect_sites": 71,
+    "exposed_sites": 136,
+    "exposed_churned": 35,
+    "exposed_churned_before_fix": 23,
+    "baseline_churn": 0.10847457627118644,
+    "excess_churned_sites": 20.247457627118642,
+    "exposed_churned_arr": 223500,
+    "excess_arr": 129294.47941888619,
+    "notice_sites": 9,
+    "notice_arr": 59700,
+    "notice_sites_exposed": 5,
+    "notice_arr_exposed": 29600,
+    "notice_exposure_rule": "ever ran the defect; all notice sites are short_history"
+  },
+  "ticket_filed_vs_churn": {
+    "filed": [
+      4,
+      25
+    ],
+    "none": [
+      31,
+      111
+    ],
+    "fisher_p": 0.3119530363051836
+  },
+  "follow_ups": {
+    "exposure_within_app_use": {
+      "pooled_odds_ratio": 1.8189582743657462,
+      "cmh_p": 0.04183250764599966,
+      "equal_odds_p": 0.9866065487909983
+    },
+    "decided_after_fix": {
+      "a": [
+        12,
+        52
+      ],
+      "b": [
+        14,
+        99
+      ],
+      "odds_ratio": 1.8214285714285714,
+      "p": 0.1798279576501213,
+      "sites_running_defect_after_fix": 36,
+      "still_running_vs_upgraded": {
+        "a": [
+          8,
+          36
+        ],
+        "b": [
+          4,
+          16
+        ],
+        "odds_ratio": 0.8571428571428571,
+        "p": 1.0,
+        "median_days_run_after_fix": 29.5,
+        "max_days_run_after_fix": 147,
+        "ran_it_within_30_days_of_renewal": 21
+      }
+    },
+    "ia3_weekly_range": {
+      "min_qc_runs_per_week": 20,
+      "normal_weeks": 53,
+      "normal_mean": 0.031228557148272083,
+      "normal_sd": 0.010414226693317916,
+      "normal_max": 0.05102040816326531,
+      "upper_limit_3sd": 0.062471237228225826,
+      "affected_weeks": 35,
+      "affected_mean": 0.3816888704350774,
+      "affected_min": 0.14705882352941177,
+      "affected_max": 0.4672131147540984,
+      "affected_weeks_above_limit": 35,
+      "median_qc_runs_per_site_assay_90d": 6.0
+    },
+    "set_aside": {
+      "straight_line_p": 0.3234919557300796,
+      "straight_line_all_factors_p": 0.6683213791240554,
+      "normal_rate": 0.030678963219574616,
+      "cuts": {
+        "normal_rate": {
+          "a": [
+            42,
+            225
+          ],
+          "b": [
+            23,
+            179
+          ],
+          "odds_ratio": 1.556664290805417,
+          "p": 0.1340021222743222
+        },
+        "5pct": {
+          "a": [
+            35,
+            153
+          ],
+          "b": [
+            30,
+            251
+          ],
+          "odds_ratio": 2.1850282485875705,
+          "p": 0.005040528881627622
+        },
+        "double_normal": {
+          "a": [
+            25,
+            119
+          ],
+          "b": [
+            40,
+            285
+          ],
+          "odds_ratio": 1.6289893617021276,
+          "p": 0.10166465458721848
+        }
+      },
+      "5pct_did_not_run_defect": {
+        "a": [
+          10,
+          59
+        ],
+        "b": [
+          20,
+          209
+        ],
+        "odds_ratio": 1.9285714285714286,
+        "p": 0.15763921576338658
+      },
+      "median_qc_runs_per_site_90d": 28.0
+    },
+    "robustness_notice": {
+      "left_out": {
+        "a": [
+          35,
+          136
+        ],
+        "b": [
+          32,
+          295
+        ],
+        "odds_ratio": 2.8480816831683167,
+        "p": 0.0001602240743644382,
+        "adjusted_odds_ratio": 2.2854060509199914,
+        "adjusted_p": 0.005038325120528003
+      },
+      "as_renewed": {
+        "a": [
+          35,
+          141
+        ],
+        "b": [
+          32,
+          299
+        ],
+        "odds_ratio": 2.75501179245283,
+        "p": 0.00019730281293089892,
+        "adjusted_odds_ratio": 2.215980758943814,
+        "adjusted_p": 0.006652453839808783
+      },
+      "as_lost": {
+        "a": [
+          40,
+          141
+        ],
+        "b": [
+          36,
+          299
+        ],
+        "odds_ratio": 2.893289328932893,
+        "p": 4.2913284703425386e-05,
+        "adjusted_odds_ratio": 2.5445658637527933,
+        "adjusted_p": 0.0007146290894494822
+      }
+    },
+    "robustness_window": [
+      {
+        "days": 30,
+        "sites": 469,
+        "a": [
+          22,
+          101
+        ],
+        "b": [
+          52,
+          368
+        ],
+        "odds_ratio": 1.6923076923076923,
+        "p": 0.06594614305292673
+      },
+      {
+        "days": 60,
+        "sites": 446,
+        "a": [
+          31,
+          129
+        ],
+        "b": [
+          39,
+          317
+        ],
+        "odds_ratio": 2.2548403976975404,
+        "p": 0.0037620272345184787
+      },
+      {
+        "days": 90,
+        "sites": 431,
+        "a": [
+          35,
+          136
+        ],
+        "b": [
+          32,
+          295
+        ],
+        "odds_ratio": 2.8480816831683167,
+        "p": 0.0001602240743644382
+      },
+      {
+        "days": 120,
+        "sites": 418,
+        "a": [
+          35,
+          135
+        ],
+        "b": [
+          30,
+          283
+        ],
+        "odds_ratio": 2.9516666666666667,
+        "p": 0.0001367695844667181
+      },
+      {
+        "days": 180,
+        "sites": 219,
+        "a": [
+          20,
+          82
+        ],
+        "b": [
+          19,
+          137
+        ],
+        "odds_ratio": 2.0033955857385397,
+        "p": 0.0671339089597939
+      },
+      {
+        "days": "all",
+        "sites": 487,
+        "a": [
+          36,
+          143
+        ],
+        "b": [
+          39,
+          344
+        ],
+        "odds_ratio": 2.631200575125809,
+        "p": 0.0002799551054644025
+      }
+    ],
+    "comparison_checks": {
+      "ran_ia3_on_hx200": {
+        "a": [
+          35,
+          136
+        ],
+        "b": [
+          24,
+          220
+        ],
+        "odds_ratio": 2.83003300330033,
+        "p": 0.0003813074878000616,
+        "adjusted_odds_ratio": 2.3735015520937295,
+        "adjusted_p": 0.005305562591527121
+      },
+      "ran_ia3_any_model": {
+        "a": [
+          35,
+          136
+        ],
+        "b": [
+          30,
+          277
+        ],
+        "odds_ratio": 2.8531353135313533,
+        "p": 0.00015987721254095955,
+        "adjusted_odds_ratio": 2.2776828998968575,
+        "adjusted_p": 0.005714708741725433
+      },
+      "negative_control_plus_new_firmware": {
+        "a": [
+          4,
+          37
+        ],
+        "b": [
+          28,
+          258
+        ],
+        "odds_ratio": 0.9956709956709957,
+        "p": 1.0,
+        "adjusted_odds_ratio": 0.9295228336123638,
+        "adjusted_p": 0.9047418344366661
+      },
+      "region_segment_holm": [
+        {
+          "region": "APAC",
+          "segment": "hospital_lab",
+          "a": [
+            2,
+            7
+          ],
+          "b": [
+            2,
+            18
+          ],
+          "odds_ratio": 3.2,
+          "p": 0.5484584980237154,
+          "holm_p": 1.0
+        },
+        {
+          "region": "APAC",
+          "segment": "reference_lab",
+          "a": [
+            0,
+            5
+          ],
+          "b": [
+            0,
+            13
+          ],
+          "odds_ratio": NaN,
+          "p": 1.0,
+          "holm_p": 1.0
+        },
+        {
+          "region": "APAC",
+          "segment": "research",
+          "a": [
+            2,
+            5
+          ],
+          "b": [
+            3,
+            14
+          ],
+          "odds_ratio": 2.4444444444444446,
+          "p": 0.5695734434124526,
+          "holm_p": 1.0
+        },
+        {
+          "region": "EU",
+          "segment": "hospital_lab",
+          "a": [
+            4,
+            18
+          ],
+          "b": [
+            6,
+            44
+          ],
+          "odds_ratio": 1.8095238095238095,
+          "p": 0.4569684297179183,
+          "holm_p": 1.0
+        },
+        {
+          "region": "EU",
+          "segment": "reference_lab",
+          "a": [
+            3,
+            14
+          ],
+          "b": [
+            2,
+            22
+          ],
+          "odds_ratio": 2.727272727272727,
+          "p": 0.3566176470588235,
+          "holm_p": 1.0
+        },
+        {
+          "region": "EU",
+          "segment": "research",
+          "a": [
+            14,
+            19
+          ],
+          "b": [
+            4,
+            18
+          ],
+          "odds_ratio": 9.8,
+          "p": 0.002918276139729929,
+          "holm_p": 0.035019313676759145
+        },
+        {
+          "region": "NA-East",
+          "segment": "hospital_lab",
+          "a": [
+            1,
+            15
+          ],
+          "b": [
+            5,
+            52
+          ],
+          "odds_ratio": 0.6714285714285714,
+          "p": 1.0,
+          "holm_p": 1.0
+        },
+        {
+          "region": "NA-East",
+          "segment": "reference_lab",
+          "a": [
+            0,
+            5
+          ],
+          "b": [
+            1,
+            17
+          ],
+          "odds_ratio": 0.0,
+          "p": 1.0,
+          "holm_p": 1.0
+        },
+        {
+          "region": "NA-East",
+          "segment": "research",
+          "a": [
+            3,
+            15
+          ],
+          "b": [
+            5,
+            18
+          ],
+          "odds_ratio": 0.65,
+          "p": 0.6991606835878249,
+          "holm_p": 1.0
+        },
+        {
+          "region": "NA-West",
+          "segment": "hospital_lab",
+          "a": [
+            4,
+            15
+          ],
+          "b": [
+            1,
+            38
+          ],
+          "odds_ratio": 13.454545454545455,
+          "p": 0.019121610908514348,
+          "holm_p": 0.21033771999365783
+        },
+        {
+          "region": "NA-West",
+          "segment": "reference_lab",
+          "a": [
+            1,
+            5
+          ],
+          "b": [
+            1,
+            16
+          ],
+          "odds_ratio": 3.75,
+          "p": 0.4285714285714286,
+          "holm_p": 1.0
+        },
+        {
+          "region": "NA-West",
+          "segment": "research",
+          "a": [
+            1,
+            13
+          ],
+          "b": [
+            2,
+            25
+          ],
+          "odds_ratio": 0.9583333333333334,
+          "p": 1.0,
+          "holm_p": 1.0
+        }
+      ]
+    },
+    "eu_research_labs": {
+      "a": [
+        14,
+        19
+      ],
+      "b": [
+        4,
+        18
+      ],
+      "odds_ratio": 9.8,
+      "p": 0.002918276139729929
+    },
+    "excess_arr_range": {
+      "excess_sites": 20.247457627118642,
+      "at_mean_arr_of_exposed_churned": 129294.47941888619,
+      "at_mean_arr_of_all_exposed": 135255.99451645065,
+      "churned_arr_minus_expected": 124950.84745762713
+    },
+    "excess_arr_with_baseline_interval": {
+      "baseline_ci": [
+        0.07789197982172323,
+        0.14912290321496824
+      ],
+      "excess_sites": [
+        14.719285162764319,
+        24.40669074424564
+      ],
+      "arr": [
+        93993.14953936642,
+        155854.15375254
+      ]
+    },
+    "eu_channel": {
+      "first_response_mannwhitney_p": {
+        "All other": 5.460704369345869e-192,
+        "QC rejection": 5.779583718517189e-06
+      },
+      "tickets_per_site": {
+        "Direct (NA, APAC)": 5.8,
+        "EU (distributor)": 6.0
+      },
+      "exposed_churn_eu_vs_direct": {
+        "a": [
+          21,
+          51
+        ],
+        "b": [
+          14,
+          85
+        ],
+        "odds_ratio": 3.55,
+        "p": 0.002185992179621924
+      },
+      "unexposed_churn_eu_vs_direct": {
+        "a": [
+          12,
+          84
+        ],
+        "b": [
+          20,
+          211
+        ],
+        "odds_ratio": 1.5916666666666666,
+        "p": 0.2987083102484236
+      },
+      "response_churned_vs_renewed": {
+        "sites": 31,
+        "churned": 5,
+        "median_churned": 14.8,
+        "median_renewed": 9.825,
+        "mannwhitney_p": 0.93578309340866
+      },
+      "eu_churned_with_no_qc_ticket": [
+        19,
+        21
+      ],
+      "eu_filed_vs_none": {
+        "a": [
+          2,
+          9
+        ],
+        "b": [
+          19,
+          42
+        ],
+        "odds_ratio": 0.3458646616541353,
+        "p": 0.2767726479498399
+      },
+      "filed_share": {
+        "eu": [
+          9,
+          51
+        ],
+        "direct": [
+          22,
+          85
+        ]
+      }
+    },
+    "churn_baseline": {
+      "normal": [
+        32,
+        295
+      ],
+      "rate": 0.10847457627118644,
+      "ci_low": 0.07789197982172323,
+      "ci_high": 0.14912290321496824,
+      "before_defect": [
+        8,
+        56
+      ],
+      "upper_limit_by_size": {
+        "50": 0.19467351455144305,
+        "136": 0.16074035970436226,
+        "300": 0.14366514546390124
+      }
+    },
+    "min_group_size": {
+      "to_catch_double_normal": 82,
+      "table": [
+        {
+          "change": "1.5 times normal",
+          "churn_to_catch": 0.163,
+          "sites_needed": 269
+        },
+        {
+          "change": "double normal",
+          "churn_to_catch": 0.217,
+          "sites_needed": 82
+        },
+        {
+          "change": "the defect effect",
+          "churn_to_catch": 0.257,
+          "sites_needed": 47
+        },
+        {
+          "change": "triple normal",
+          "churn_to_catch": 0.325,
+          "sites_needed": 27
+        }
+      ],
+      "regions_meeting_it": [
+        "EU",
+        "NA-East",
+        "NA-West"
+      ]
+    },
+    "monitor_backtest": {
+      "window_days": 7,
+      "limit_sd": 3,
+      "first_flag_410": "2025-11-16",
+      "days_after_release": 11,
+      "defect_days_flagged": [
+        387,
+        399
+      ],
+      "other_flag_episodes": 79,
+      "other_flag_episodes_per_week": 1.5,
+      "combinations": 60
+    },
+    "still_on_affected_at_extract": {
+      "HX-200 4.1.0": 49,
+      "HX-200 Plus 4.1.0": 27
+    },
+    "lost_exposed_qc_ticket": {
+      "lost_sites": 35,
+      "filed_in_90d_window": 4,
+      "filed_before_decision": 5,
+      "filed_ever": 6
+    },
+    "lost_exposed_by_tier": {
+      "Basic": 28,
+      "Plus": 7
+    },
+    "affected_runs_passed_qc": {
+      "passed_runs": 1340,
+      "qc_runs": 2208,
+      "samples": 68649,
+      "sites": 207
+    }
+  }
+}
