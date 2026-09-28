@@ -80,8 +80,9 @@ The clock started at the data pack download. Times are elapsed.
 | 3:35 to 4:12 | README, pull request and self-review, figure redraws |
 | 4:12 to 4:47 | QC-ticket check (D12), QC alerting for every tier, the walkthrough deck |
 | 4:47 to 5:17 | Churn by region and lab type figure, the walkthrough video |
+| 5:17 to 5:32 | Refinement session after an outside review: the FINDINGS opener, the renewal list in PROPOSAL, the notebook reply to Marcus, the normal QC range |
 
-Total: 5:17 of the 6 hours. Some slide formatting for the video was done off the clock.
+Total: 5:32 of the 6 hours. Between 5:17 and the refinement session, off the clock, I formatted the slides for an earlier cut of the video, wrote the [wiki decisions page](https://github.com/this-is-how-we-see/halvard-qc-churn/wiki) that the final video follows, and corrected one number in BACKLOG_001 (2 weeks to 19 days). After the refinement session, with the clock paused, I coded the normal QC range as D13, removed the straight-line QC models and the 5% threshold, and reran the build and the notebook. The final recording isn't in the total.
 
 ## How AI was used
 

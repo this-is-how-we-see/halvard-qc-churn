@@ -1103,14 +1103,12 @@ facts(S["follow_ups"]["exposure_within_app_use"], "Ran the affected firmware, wi
 </div>
 
 
-**Decisions after the fix, a QC failure threshold, and European research labs.** All use Fisher's
-exact test.
+**Decisions after the fix, and European research labs.** Both use Fisher's exact test.
 
 
 ```python
 fu = S["follow_ups"]
 facts(fu["decided_after_fix"], "Renewal after 4.1.2: a = ran it, b = did not")
-facts(fu["qc_threshold_5pct"], "QC failure rate: a = above 5%, b = at or below")
 facts(fu["eu_research_labs"], "European research labs: a = ran it, b = did not")
 ```
 
@@ -1183,69 +1181,6 @@ facts(fu["eu_research_labs"], "European research labs: a = ran it, b = did not")
   <thead>
     <tr style="text-align: right;">
       <th></th>
-      <th>QC failure rate: a = above 5%, b = at or below</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <th>all_sites / a</th>
-      <td>35 of 153 (22.9%)</td>
-    </tr>
-    <tr>
-      <th>all_sites / b</th>
-      <td>30 of 251 (12.0%)</td>
-    </tr>
-    <tr>
-      <th>all_sites / odds_ratio</th>
-      <td>2.185</td>
-    </tr>
-    <tr>
-      <th>all_sites / p</th>
-      <td>0.005</td>
-    </tr>
-    <tr>
-      <th>did_not_run_defect / a</th>
-      <td>10 of 59 (16.9%)</td>
-    </tr>
-    <tr>
-      <th>did_not_run_defect / b</th>
-      <td>20 of 209 (9.6%)</td>
-    </tr>
-    <tr>
-      <th>did_not_run_defect / odds_ratio</th>
-      <td>1.929</td>
-    </tr>
-    <tr>
-      <th>did_not_run_defect / p</th>
-      <td>0.158</td>
-    </tr>
-    <tr>
-      <th>ran_defect / a</th>
-      <td>25 of 94 (26.6%)</td>
-    </tr>
-    <tr>
-      <th>ran_defect / b</th>
-      <td>10 of 42 (23.8%)</td>
-    </tr>
-    <tr>
-      <th>ran_defect / odds_ratio</th>
-      <td>1.159</td>
-    </tr>
-    <tr>
-      <th>ran_defect / p</th>
-      <td>0.833</td>
-    </tr>
-  </tbody>
-</table>
-</div>
-
-
-
-<div>
-<table border="1" class="dataframe">
-  <thead>
-    <tr style="text-align: right;">
-      <th></th>
       <th>European research labs: a = ran it, b = did not</th>
     </tr>
   </thead>
@@ -1269,6 +1204,27 @@ facts(fu["eu_research_labs"], "European research labs: a = ran it, b = did not")
   </tbody>
 </table>
 </div>
+
+
+**The normal QC range for HX-200 IA-Panel-3.** A QC lab reads a control failure rate against its
+normal range, not against an average or a slope. The range comes from weekly fleet rates on other
+firmware, weeks with at least 20 QC runs: the mean plus three standard deviations. A site runs a
+median of about 6 QC runs per assay in its 90 days, too few to set a range of its own, so each site
+is compared by what it ran.
+
+
+```python
+r = fu["ia3_weekly_range"]
+print(f"Other firmware: {r['normal_weeks']} weeks, mean {r['normal_mean']:.1%}, SD {r['normal_sd']:.1%}, "
+      f"highest {r['normal_max']:.1%}; upper limit (mean + 3 SD) {r['upper_limit_3sd']:.1%}")
+print(f"4.1.0 and 4.1.1: {r['affected_weeks']} weeks, mean {r['affected_mean']:.1%}, lowest {r['affected_min']:.1%}, "
+      f"highest {r['affected_max']:.1%}; {r['affected_weeks_above_limit']} of {r['affected_weeks']} weeks above the limit")
+print(f"Median QC runs per site and assay in 90 days: {r['median_qc_runs_per_site_assay_90d']:.0f}")
+```
+
+    Other firmware: 53 weeks, mean 3.1%, SD 1.0%, highest 5.1%; upper limit (mean + 3 SD) 6.2%
+    4.1.0 and 4.1.1: 35 weeks, mean 38.2%, lowest 14.7%, highest 46.7%; 35 of 35 weeks above the limit
+    Median QC runs per site and assay in 90 days: 6
 
 
 **Normal churn and group-size limits.** Normal churn is the rate for sites that did not run the

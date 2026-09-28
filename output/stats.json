@@ -6,7 +6,7 @@
       16.55436843941197,
       22.82346181027196
     ],
-    "firmware_lr_chi2": 1645.9258680744852,
+    "firmware_lr_chi2": 1645.925868074486,
     "firmware_p": 0.0,
     "month_lr_chi2": 5.360522165201473,
     "month_df": 11,
@@ -50,11 +50,9 @@
     "slope_p": 2.4345677054209007e-30
   },
   "regression": {
-    "main_sites": 404,
-    "main_churned": 65,
-    "check_sites": 360,
-    "check_churned": 59,
-    "main_pseudo_r2": 0.2932260253490716
+    "sites": 431,
+    "churned": 67,
+    "pseudo_r2": 0.1149328595058271
   },
   "customer_story": {
     "release_410": "2025-11-05",
@@ -126,43 +124,19 @@
         "ran_it_within_30_days_of_renewal": 21
       }
     },
-    "qc_threshold_5pct": {
-      "all_sites": {
-        "a": [
-          35,
-          153
-        ],
-        "b": [
-          30,
-          251
-        ],
-        "odds_ratio": 2.1850282485875705,
-        "p": 0.005040528881627622
-      },
-      "did_not_run_defect": {
-        "a": [
-          10,
-          59
-        ],
-        "b": [
-          20,
-          209
-        ],
-        "odds_ratio": 1.9285714285714286,
-        "p": 0.15763921576338658
-      },
-      "ran_defect": {
-        "a": [
-          25,
-          94
-        ],
-        "b": [
-          10,
-          42
-        ],
-        "odds_ratio": 1.1594202898550725,
-        "p": 0.8332921647470408
-      }
+    "ia3_weekly_range": {
+      "min_qc_runs_per_week": 20,
+      "normal_weeks": 53,
+      "normal_mean": 0.031228557148272083,
+      "normal_sd": 0.010414226693317916,
+      "normal_max": 0.05102040816326531,
+      "upper_limit_3sd": 0.062471237228225826,
+      "affected_weeks": 35,
+      "affected_mean": 0.3816888704350774,
+      "affected_min": 0.14705882352941177,
+      "affected_max": 0.4672131147540984,
+      "affected_weeks_above_limit": 35,
+      "median_qc_runs_per_site_assay_90d": 6.0
     },
     "eu_research_labs": {
       "a": [

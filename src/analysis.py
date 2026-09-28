@@ -325,32 +325,17 @@ def comparison(con, results):
     med.columns = ["factor", "renewed_median", "churned_median"]
     med.to_csv(TAB / "factor_medians.csv", index=False)
 
-    # The regression check: every factor held equal at once.
-    def fit(df):
-        d = df.copy()
-        d["qc_per_10pts"] = d.qc_fail_rate * 10
-        d["log_runs"] = np.log1p(d.runs_90d)
-        d["log_app"] = np.log1p(d.app_events_90d_est)
-        return smf.logit("churn ~ qc_per_10pts + C(region, Treatment('NA-East')) + C(segment) + C(tier)"
-                         " + log_runs + log_app + tickets_90d", data=d).fit(disp=0)
-    keep = ["qc_per_10pts", "C(affected", "C(region", "C(segment", "C(tier", "log_runs", "log_app", "tickets_90d"]
-    main = fit(qc)
-    check = fit(qc[~qc.partial_run_coverage])
-    odds_ratios(main, keep).to_csv(TAB / "regression_main.csv", index=False)
-    odds_ratios(check, keep).to_csv(TAB / "regression_check.csv", index=False)
+    keep = ["C(affected", "C(region", "C(segment", "C(tier", "log_runs"]
 
     # Models without app use and tickets. Both can sit on the path from QC
     # failures to churn (a lab with failures files tickets and uses the app
     # less), so holding them equal can hide a real effect of QC.
     def prep(df):
         d = df.copy()
-        d["qc_per_10pts"] = d.qc_fail_rate * 10
         d["log_runs"] = np.log1p(d.runs_90d)
         return d
     base = " + C(region, Treatment('NA-East')) + C(segment) + C(tier) + log_runs"
-    m_qc = smf.logit("churn ~ qc_per_10pts" + base, data=prep(qc)).fit(disp=0)
     m_exp = smf.logit("churn ~ C(affected_exposure)" + base, data=prep(sites)).fit(disp=0)
-    odds_ratios(m_qc, keep).to_csv(TAB / "regression_qc_no_mediators.csv", index=False)
     odds_ratios(m_exp, keep).to_csv(TAB / "regression_exposure_no_mediators.csv", index=False)
     path = sites.groupby("affected_exposure").agg(
         sites=("site_id", "size"), median_tickets=("tickets_90d", "median"),
@@ -362,10 +347,8 @@ def comparison(con, results):
         median_first_response_hrs=("median_first_response_hrs", "median"),
         median_app_events=("app_events_90d_est", "median")).reset_index()
     reg.to_csv(TAB / "support_by_region.csv", index=False)
-    results["regression"] = {"main_sites": int(main.nobs), "main_churned": int(qc.churn.sum()),
-                             "check_sites": int(check.nobs),
-                             "check_churned": int(qc[~qc.partial_run_coverage].churn.sum()),
-                             "main_pseudo_r2": float(main.prsquared)}
+    results["regression"] = {"sites": int(m_exp.nobs), "churned": int(sites.churn.sum()),
+                             "pseudo_r2": float(m_exp.prsquared)}
 
 
 # ---------------------------------------------------------------- Part C
@@ -682,15 +665,41 @@ def follow_ups(con, results):
         "max_days_run_after_fix": int((still.last_affected_run - fix).dt.days.max()),
         "ran_it_within_30_days_of_renewal": int(((still.decision_date - still.last_affected_run).dt.days <= 30).sum())}
 
-    # D6. A QC failure threshold. The straight-line model asks whether each extra
-    # point of failures adds the same risk. This asks whether sites above 5%, one of
-    # the band edges set in Part B, churn more. Exploratory.
-    q = s[s.in_qc_comparison].copy()
-    q["above_5pct"] = q.qc_fail_rate > 0.05
-    thr = lambda d: fisher(kn(d[d.above_5pct]), kn(d[~d.above_5pct]))
-    out["qc_threshold_5pct"] = {"all_sites": thr(q),
-                                "did_not_run_defect": thr(q[q.affected_exposure == "no"]),
-                                "ran_defect": thr(q[q.affected_exposure == "yes"])}
+    # D13. The normal weekly range for HX-200 IA-Panel-3. A QC lab reads a control
+    # failure rate against its normal range, not against an average or a slope. The
+    # fleet runs about 200 QC runs of this combination a week, enough to set the range.
+    # A site runs a median of about 5 per assay in its 90 days, too few for its own.
+    wk = con.execute("""
+        select date_trunc('week', r.run_date) as week,
+               r.firmware_version in ('4.1.0', '4.1.1') as affected,
+               count(*) filter (where r.qc_status = 'fail') as fails,
+               count(*) filter (where r.qc_status in ('pass', 'fail')) as qc_runs
+        from stg_runs r join stg_instruments i using (instrument_id)
+        where i.model = 'HX-200' and r.assay_type = 'IA-Panel-3' and r.firmware_version >= '4.0.0'
+        group by 1, 2 having count(*) filter (where r.qc_status in ('pass', 'fail')) >= 20
+        order by 1, 2
+    """).df()
+    wk["rate"] = wk.fails / wk.qc_runs
+    wk.to_csv(TAB / "ia3_weekly_range.csv", index=False)
+    nrm, aff = wk[~wk.affected], wk[wk.affected]
+    limit = float(nrm.rate.mean() + 3 * nrm.rate.std())
+    site_assay = con.execute("""
+        select count(*) filter (where r.qc_status in ('pass', 'fail')) as qc_runs
+        from site_renewal m join stg_instruments i on i.site_id = m.site_id
+        join stg_runs r on r.instrument_id = i.instrument_id
+         and r.run_date >= m.decision_date - interval 90 day and r.run_date < m.decision_date
+        where m.cohort = 'main' and m.in_qc_comparison and r.firmware_version >= '4.0.0'
+        group by m.site_id, r.assay_type
+    """).df()
+    out["ia3_weekly_range"] = {
+        "min_qc_runs_per_week": 20,
+        "normal_weeks": int(len(nrm)), "normal_mean": float(nrm.rate.mean()),
+        "normal_sd": float(nrm.rate.std()), "normal_max": float(nrm.rate.max()),
+        "upper_limit_3sd": limit,
+        "affected_weeks": int(len(aff)), "affected_mean": float(aff.rate.mean()),
+        "affected_min": float(aff.rate.min()), "affected_max": float(aff.rate.max()),
+        "affected_weeks_above_limit": int((aff.rate > limit).sum()),
+        "median_qc_runs_per_site_assay_90d": float(site_assay.qc_runs.median())}
 
     # D7. European research labs, by exposure.
     er = s[(s.region == "EU") & (s.segment == "research")]

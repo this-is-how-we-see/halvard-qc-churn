@@ -2,13 +2,11 @@
 
 **For:** Dana Whitfield · **Data:** 2025-09-01 to 2026-08-31 · **Sites:** 431
 
-As your team suspected, QC failures went with the lost renewals at the last cycle, and they came from the IA-Panel-3 curve-fit problem that Halvard corrected in 4.1.2. On the HX-200, IA-Panel-3 failed QC 38% of the time on firmware 4.1.0 and 42% on 4.1.1, against about 3% on other firmware. Each instrument's failures started when it installed 4.1.0 and stopped when it installed 4.1.2, whatever the date, so a bad control lot doesn't explain them. Across 361 instruments, the rate went from 27% before the upgrade to 4% after it.
+As your team suspected, QC failures above the normal rate went with the lost renewals at the last cycle, and they came from one defect, the IA-Panel-3 curve-fit problem that Halvard corrected in 4.1.2. On the HX-200, IA-Panel-3 on other firmware failed QC on about 3% of runs a week and never above 5.1% in 53 weeks, so the upper limit of its normal range is 6.2%, three standard deviations up. All 35 weeks on 4.1.0 and 4.1.1 were above it, at 38% on average. Each instrument's failures started when it installed 4.1.0 and stopped when it installed 4.1.2, whatever the date, so a bad control lot doesn't explain them. The rate went from 27% before the upgrade to 4% after it.
 
 ## What it cost
 
-Sites that ran IA-Panel-3 on the affected firmware churned at 25.7%, more than twice the normal rate of about 11% a year. The difference holds with region, segment, tier and run volume held equal, at 2.3 times the odds (p = 0.005). It also holds for light, middle and heavy HaloCloud users: 41% against 28%, 13% against 8%, and 4% against 2%. That's about 20 more lost sites than normal, worth $125,000 to $135,000 in ARR. Five of the nine sites now on notice ran it too.
-
-Sites with a QC failure rate above 5% churned at 23%, against 12% at or below 5% (p = 0.005), though most ran the affected firmware. Among sites that never ran it, the split was 17% against 10% (p = 0.16), a possible trend.
+A site runs a median of 6 QC runs per assay in 90 days, too few to set a range for each site, so sites are compared by whether they ran the affected combination. Sites that ran it churned at 25.7%, more than twice the normal rate of about 11% a year. The difference holds with region, segment, tier and run volume held equal, at 2.3 times the odds (p = 0.005). That's about 20 more lost sites than normal, worth $125,000 to $135,000 in ARR. Five of the nine sites now on notice ran it too.
 
 ## Visible early, fixed late
 
@@ -28,6 +26,6 @@ European sites that ran the affected firmware churned at 41%, against 16% for di
 
 A QC failure from Halvard's firmware is Halvard's defect to catch, so QC alerting belongs in every tier. A Plus-only alert would also have missed most of the 35 lost sites, because 28 were on Basic. Only five of the 35 filed a QC rejection ticket before deciding. **The gap was between a clear signal in Halvard's telemetry and a fix in the field.**
 
-Release testing is the other gap. A curve-fit change is normally verified with controls on real instruments, but the defect appeared only on the HX-200, and the HX-200 Plus ran IA-Panel-3 at about 4% on the same firmware. Testing most likely missed that combination. PROPOSAL.md covers instrument simulators that test every model and assay before release, a fleet QC view and a rollback path.
+Release testing is the other gap. The defect appeared only on the HX-200, and the HX-200 Plus ran IA-Panel-3 at about 4% on the same firmware. Testing most likely missed that combination. PROPOSAL.md starts with the affected sites still due to renew, then covers a fleet QC view, a rollback path and instrument simulators that test every model and assay before release.
 
 With one renewal cycle, the normal rate of 11% is an estimate, likely 8% to 15%.
