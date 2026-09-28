@@ -1227,6 +1227,133 @@ print(f"Median QC runs per site and assay in 90 days: {r['median_qc_runs_per_sit
     Median QC runs per site and assay in 90 days: 6
 
 
+**Set aside: a straight-line model and a site-level cut.** KICKOFF planned a logistic regression on
+each site's QC failure rate. That model assumes churn rises steadily with the rate, and a QC lab
+doesn't act that way: once an assay runs above its normal range, the lab treats it as a problem,
+whatever the rate. The model found no link, which fits that, and it also reflects small counts, at a
+median of about 28 QC runs per site in 90 days. Churn by QC band is lower below 5% and higher above
+it, but I chose the 5% cut after seeing the band table, and it doesn't hold at the cuts around it:
+the normal rate and double the normal rate are both weak. I kept both results here for the record.
+The finding rests on the normal range above and on what each site ran.
+
+
+```python
+sa = fu["set_aside"]
+print(f"Straight line, per 10 points of QC failure rate: p = {sa['straight_line_p']:.2f}; "
+      f"with app use and tickets also held equal: p = {sa['straight_line_all_factors_p']:.2f}")
+print(f"Median QC runs per site in 90 days: {sa['median_qc_runs_per_site_90d']:.0f}")
+for name, label in [("normal_rate", f"{sa['normal_rate']:.1%} (normal)"), ("5pct", "5%"),
+                    ("double_normal", f"{2 * sa['normal_rate']:.1%} (double normal)")]:
+    c = sa["cuts"][name]
+    print(f"Cut at {label}: above {c['a'][0]}/{c['a'][1]} = {c['a'][0]/c['a'][1]:.1%}, "
+          f"at or below {c['b'][0]}/{c['b'][1]} = {c['b'][0]/c['b'][1]:.1%}, p = {c['p']:.3f}")
+facts(sa["5pct_did_not_run_defect"], "5% cut, sites that never ran the affected firmware: a = above, b = at or below")
+display(table("churn_by_qc_band"))
+```
+
+    Straight line, per 10 points of QC failure rate: p = 0.32; with app use and tickets also held equal: p = 0.67
+    Median QC runs per site in 90 days: 28
+    Cut at 3.1% (normal): above 42/225 = 18.7%, at or below 23/179 = 12.8%, p = 0.134
+    Cut at 5%: above 35/153 = 22.9%, at or below 30/251 = 12.0%, p = 0.005
+    Cut at 6.1% (double normal): above 25/119 = 21.0%, at or below 40/285 = 14.0%, p = 0.102
+
+
+
+<div>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>5% cut, sites that never ran the affected firmware: a = above, b = at or below</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>a</th>
+      <td>10 of 59 (16.9%)</td>
+    </tr>
+    <tr>
+      <th>b</th>
+      <td>20 of 209 (9.6%)</td>
+    </tr>
+    <tr>
+      <th>odds_ratio</th>
+      <td>1.929</td>
+    </tr>
+    <tr>
+      <th>p</th>
+      <td>0.158</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+
+
+<div>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>qc_band</th>
+      <th>n</th>
+      <th>events</th>
+      <th>rate</th>
+      <th>ci_low</th>
+      <th>ci_high</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>0%</td>
+      <td>129</td>
+      <td>18</td>
+      <td>0.140</td>
+      <td>0.090</td>
+      <td>0.210</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>over 0 to 5%</td>
+      <td>122</td>
+      <td>12</td>
+      <td>0.098</td>
+      <td>0.057</td>
+      <td>0.164</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>over 5 to 10%</td>
+      <td>100</td>
+      <td>22</td>
+      <td>0.220</td>
+      <td>0.150</td>
+      <td>0.311</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>over 10 to 20%</td>
+      <td>46</td>
+      <td>11</td>
+      <td>0.239</td>
+      <td>0.139</td>
+      <td>0.379</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>over 20%</td>
+      <td>7</td>
+      <td>2</td>
+      <td>0.286</td>
+      <td>0.082</td>
+      <td>0.641</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+
 **Normal churn and group-size limits.** Normal churn is the rate for sites that did not run the
 affected firmware. A group breaches normal when its rate is above the center line plus 1.96 standard
 errors for its size, so the limit widens for small groups.

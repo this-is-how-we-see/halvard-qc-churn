@@ -6,11 +6,11 @@
       16.55436843941197,
       22.82346181027196
     ],
-    "firmware_lr_chi2": 1645.925868074486,
+    "firmware_lr_chi2": 1645.9258680744852,
     "firmware_p": 0.0,
-    "month_lr_chi2": 5.360522165202383,
+    "month_lr_chi2": 5.360522165196926,
     "month_df": 11,
-    "month_p": 0.9124581254437876
+    "month_p": 0.9124581254440896
   },
   "lot_same_window": {
     "affected": [
@@ -137,6 +137,62 @@
       "affected_max": 0.4672131147540984,
       "affected_weeks_above_limit": 35,
       "median_qc_runs_per_site_assay_90d": 6.0
+    },
+    "set_aside": {
+      "straight_line_p": 0.3234919557300796,
+      "straight_line_all_factors_p": 0.6683213791240554,
+      "normal_rate": 0.030678963219574616,
+      "cuts": {
+        "normal_rate": {
+          "a": [
+            42,
+            225
+          ],
+          "b": [
+            23,
+            179
+          ],
+          "odds_ratio": 1.556664290805417,
+          "p": 0.1340021222743222
+        },
+        "5pct": {
+          "a": [
+            35,
+            153
+          ],
+          "b": [
+            30,
+            251
+          ],
+          "odds_ratio": 2.1850282485875705,
+          "p": 0.005040528881627622
+        },
+        "double_normal": {
+          "a": [
+            25,
+            119
+          ],
+          "b": [
+            40,
+            285
+          ],
+          "odds_ratio": 1.6289893617021276,
+          "p": 0.10166465458721848
+        }
+      },
+      "5pct_did_not_run_defect": {
+        "a": [
+          10,
+          59
+        ],
+        "b": [
+          20,
+          209
+        ],
+        "odds_ratio": 1.9285714285714286,
+        "p": 0.15763921576338658
+      },
+      "median_qc_runs_per_site_90d": 28.0
     },
     "eu_research_labs": {
       "a": [

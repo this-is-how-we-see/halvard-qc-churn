@@ -701,6 +701,38 @@ def follow_ups(con, results):
         "affected_weeks_above_limit": int((aff.rate > limit).sum()),
         "median_qc_runs_per_site_assay_90d": float(site_assay.qc_runs.median())}
 
+    # D14. Set aside: a straight-line model and a site-level cut. KICKOFF planned a
+    # logistic regression on each site's QC failure rate. It assumes churn rises steadily
+    # with the rate, which is not how a QC lab acts on failures: an assay above its normal
+    # range is a problem whatever the rate. A site's counts are also small (D13). The 5% cut
+    # came after seeing the band table, so it is tested against nearby cuts. Kept for the
+    # record; the finding rests on D13 and on exposure.
+    q = s[s.in_qc_comparison].copy()
+    q["qc_per_10pts"] = q.qc_fail_rate * 10
+    q["log_runs"] = np.log1p(q.runs_90d)
+    q["log_app"] = np.log1p(q.app_events_90d_est)
+    ctrl = " + C(region, Treatment('NA-East')) + C(segment) + C(tier) + log_runs"
+    line = smf.logit("churn ~ qc_per_10pts" + ctrl, data=q).fit(disp=0)
+    line_all = smf.logit("churn ~ qc_per_10pts" + ctrl + " + log_app + tickets_90d", data=q).fit(disp=0)
+    keep_sa = ["qc_per_10pts", "C(region", "C(segment", "C(tier", "log_runs", "log_app", "tickets_90d"]
+    odds_ratios(line, keep_sa).to_csv(TAB / "set_aside_qc_straight_line.csv", index=False)
+    odds_ratios(line_all, keep_sa).to_csv(TAB / "set_aside_qc_straight_line_all_factors.csv", index=False)
+    p0 = float(con.execute("""
+        select count(*) filter (where r.qc_status = 'fail') * 1.0
+             / count(*) filter (where r.qc_status in ('pass', 'fail'))
+        from stg_runs r join stg_instruments i using (instrument_id)
+        where r.firmware_version >= '4.0.0'
+          and not (i.model = 'HX-200' and r.assay_type = 'IA-Panel-3' and r.firmware_version in ('4.1.0', '4.1.1'))
+    """).fetchone()[0])
+    cut = lambda c, d: fisher(kn(d[d.qc_fail_rate > c]), kn(d[d.qc_fail_rate <= c]))
+    out["set_aside"] = {
+        "straight_line_p": float(line.pvalues["qc_per_10pts"]),
+        "straight_line_all_factors_p": float(line_all.pvalues["qc_per_10pts"]),
+        "normal_rate": p0,
+        "cuts": {"normal_rate": cut(p0, q), "5pct": cut(0.05, q), "double_normal": cut(2 * p0, q)},
+        "5pct_did_not_run_defect": cut(0.05, q[q.affected_exposure == "no"]),
+        "median_qc_runs_per_site_90d": float((q.qc_pass + q.qc_fail).median())}
+
     # D7. European research labs, by exposure.
     er = s[(s.region == "EU") & (s.segment == "research")]
     out["eu_research_labs"] = fisher(kn(er[er.affected_exposure == "yes"]), kn(er[er.affected_exposure == "no"]))
