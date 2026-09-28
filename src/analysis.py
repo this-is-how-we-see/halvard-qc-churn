@@ -208,23 +208,26 @@ def lot_test(con, results):
     plt.close(fig)
 
     # Figure: event time around each instrument's own upgrade.
-    fig, ax = plt.subplots(figsize=(8.5, 3.6), dpi=160, facecolor=SURFACE)
-    style(ax)
+    r = results["lot_event_time"]
+    b, a = r["before"][0] / r["before"][1], r["after"][0] / r["after"][1]
+    fig, ax = slide("QC failures dropped the week each instrument installed 4.1.2",
+                    f"HX-200 IA-Panel-3 QC failure rate, by week before and after each instrument's own upgrade, "
+                    f"{r['instruments']} instruments",
+                    f"Source: Halvard instrument telemetry. Upgrades ran from {r['upgrade_first']} to {r['upgrade_last']}, "
+                    "so week 0 is a different date for each instrument. Shaded band: likely range.")
+    fig.subplots_adjust(top=0.8, bottom=0.2, left=0.07, right=0.96)
     ax.fill_between(wk.week, wk.ci_low, wk.ci_high, color=BLUE, alpha=0.15, linewidth=0)
-    ax.plot(wk.week, wk.rate, color=BLUE, linewidth=2.2, marker="o", markersize=4)
+    ax.plot(wk.week, wk.rate, color=BLUE, linewidth=2.4, marker="o", markersize=5)
     ax.axvline(-0.5, color=INK_2, linewidth=1, linestyle=(0, (3, 3)))
-    ax.text(-0.4, 0.46, " each instrument moves to 4.1.2", color=INK_2, fontsize=8.5, va="top")
+    box = dict(facecolor=SURFACE, edgecolor="none", pad=1.5)
+    ax.text(-0.35, 0.47, "Each instrument moves to 4.1.2", color=INK, fontsize=10.5, va="center", bbox=box)
+    ax.text(-5.2, 0.475, f"{b:.0%} of runs failed before", color=INK, fontsize=11, fontweight="bold", ha="center", bbox=box)
+    ax.text(3.5, 0.17, f"{a:.0%} after", color=INK, fontsize=11, fontweight="bold", ha="center", bbox=box)
     ax.set_xticks(range(-8, 8))
-    ax.set_xticklabels([f"{w:+d}" if w else "0" for w in range(-8, 8)], fontsize=8.5)
-    ax.set_xlabel("Weeks from that instrument's own upgrade", color=INK_2, fontsize=9)
+    ax.set_xticklabels([f"{w:+d}" if w else "0" for w in range(-8, 8)])
+    ax.set_xlabel("Weeks from that instrument's own upgrade", color=INK_2, fontsize=10.5)
     ax.set_ylim(0, 0.5)
     ax.yaxis.set_major_formatter(matplotlib.ticker.PercentFormatter(1.0, decimals=0))
-    r = results["lot_event_time"]
-    ax.set_title(f"HX-200 IA-Panel-3 QC failure rate around each instrument's upgrade ({r['instruments']} instruments)",
-                 loc="left", color=INK, fontsize=11, fontweight="bold")
-    fig.text(0.01, 0.01, f"Upgrades spread from {r['upgrade_first']} to {r['upgrade_last']}, so week 0 falls on a "
-             "different calendar date for each instrument. Band: 95% Wilson interval.", color=INK_2, fontsize=7.5)
-    fig.subplots_adjust(bottom=0.25, top=0.88, left=0.07, right=0.97)
     fig.savefig(FIG / "lot_test_event_time.png", facecolor=SURFACE)
     plt.close(fig)
 
@@ -250,25 +253,25 @@ def adoption(con, results):
                            "slope_p": float(f.pvalues["affected_share"])}
     rel = con.execute("""select version, release_date from stg_firmware_releases
                          where release_date between date '2025-09-01' and date '2026-08-31'""").fetchall()
-    fig, axes = plt.subplots(2, 1, figsize=(9.5, 5.6), dpi=160, facecolor=SURFACE, sharex=True)
+    fig, axes = slide("QC failures rose and fell with the share of runs on the affected firmware",
+                      "HX-200 IA-Panel-3, weekly",
+                      "Source: Halvard instrument telemetry, September 2025 to August 2026. Dashed lines: firmware releases.",
+                      nrows=2, sharex=True)
+    fig.subplots_adjust(top=0.8, bottom=0.14, left=0.07, right=0.96, hspace=0.5)
+    box = dict(facecolor=SURFACE, edgecolor="none", pad=1.2)
     for ax, col, color, title, top in [
-        (axes[0], "affected_share", BLUE, "Share of HX-200 IA-Panel-3 runs on firmware 4.1.0 or 4.1.1", 0.6),
-        (axes[1], "fail_rate", ORANGE, "HX-200 IA-Panel-3 QC failure rate", 0.3)]:
-        style(ax)
-        ax.plot(pd.to_datetime(w.week), w[col], color=color, linewidth=2.2)
+        (axes[0], "affected_share", ORANGE, "A.  Share of runs on firmware 4.1.0 or 4.1.1", 0.6),
+        (axes[1], "fail_rate", BLUE, "B.  QC failure rate", 0.3)]:
+        ax.plot(pd.to_datetime(w.week), w[col], color=color, linewidth=2.4)
         for v, d in rel:
             ax.axvline(pd.Timestamp(d), color=INK_2, linewidth=1, linestyle=(0, (3, 3)))
-            ax.text(pd.Timestamp(d), top, f" {v}", color=INK_2, fontsize=8, va="top")
+            ax.text(pd.Timestamp(d) + pd.Timedelta(days=3), top * 0.93, v, color=INK, fontsize=10,
+                    va="center", ha="left", bbox=box)
         ax.set_ylim(0, top)
         ax.yaxis.set_major_formatter(matplotlib.ticker.PercentFormatter(1.0, decimals=0))
-        ax.set_title(title, loc="left", color=INK, fontsize=10.5, fontweight="bold")
+        ax.set_title(title, loc="left", color=INK, fontsize=11.5, fontweight="bold")
     axes[1].xaxis.set_major_locator(matplotlib.dates.MonthLocator())
     axes[1].xaxis.set_major_formatter(matplotlib.dates.DateFormatter("%b\n%Y"))
-    a = results["adoption"]
-    fig.text(0.01, 0.01, f"Weekly. The failure rate tracks adoption: rate = {a['intercept']:.1%} + "
-             f"{a['slope']:.0%} x share on affected firmware (R² {a['r2']:.2f}, {a['weeks']} weeks). "
-             "Dashed: release dates.", color=INK_2, fontsize=7.5)
-    fig.subplots_adjust(bottom=0.13, top=0.93, left=0.07, right=0.97, hspace=0.35)
     fig.savefig(FIG / "adoption_and_failures.png", facecolor=SURFACE)
     plt.close(fig)
 
@@ -576,34 +579,34 @@ def churn_figures(con, results):
     t = t[t.term.isin(names)].copy()
     t["label"] = t.term.map(names)
     t = t.sort_values("odds_ratio")
-    fig, ax = plt.subplots(figsize=(10, 4.6), dpi=160, facecolor=SURFACE)
-    style(ax)
+    t["label"] = t.label.str.replace("EU (vs NA-East)", "Europe (vs NA-East)", regex=False)
+    t["label"] = t.label.str.replace("Run volume (per step on a log scale)", "Higher run volume", regex=False)
+    fig, ax = slide("The affected firmware raised the odds of losing a site, with other factors held equal",
+                    "How each factor changes the odds of not renewing, against the group in brackets",
+                    "Source: 431 sites, one model with all eight factors. Lines show the likely range; "
+                    "a line that crosses \u00d71 could be chance.")
+    fig.subplots_adjust(top=0.76, bottom=0.14, left=0.28, right=0.95)
     ax.grid(axis="y", visible=False)
     ax.grid(axis="x", color=GRID, linewidth=0.8)
+    legend_row(fig, [(ORANGE, "The affected firmware"), (INK_2, "Clear difference"), (GREY, "Could be chance")])
     y = np.arange(len(t))
-    sig = t.p_value < 0.05
-    ax.hlines(y, t.ci_low, t.ci_high, color=[ORANGE if v else INK_2 for v in sig], linewidth=2)
-    ax.scatter(t.odds_ratio, y, s=60, color=[ORANGE if v else INK_2 for v in sig], zorder=3)
-    for yi, (o, lo, hi, p) in enumerate(zip(t.odds_ratio, t.ci_low, t.ci_high, t.p_value)):
-        ax.text(max(hi, o) * 1.08, yi, f"{o:.1f}x  (p = {p:.3f})" if p >= 0.001 else f"{o:.1f}x  (p < 0.001)",
-                color=INK, fontsize=8.5, va="center")
+    cols = [ORANGE if term == "C(affected_exposure)[T.yes]" else (INK_2 if p < 0.05 else GREY)
+            for term, p in zip(t.term, t.p_value)]
+    ax.hlines(y, t.ci_low, t.ci_high, color=cols, linewidth=2.2)
+    ax.scatter(t.odds_ratio, y, s=70, color=cols, zorder=3)
+    for yi, (o, hi) in enumerate(zip(t.odds_ratio, t.ci_high)):
+        ax.text(hi * 1.07, yi, f"\u00d7{o:.1f}", color=INK, fontsize=11, va="center")
     ax.axvline(1, color=INK, linewidth=1)
     ax.set_xscale("log")
-    ax.set_xlim(0.12, 14)
+    ax.set_xlim(0.15, 12)
     ax.set_xticks([0.25, 0.5, 1, 2, 4, 8])
-    ax.set_xticklabels(["0.25x", "0.5x", "1x", "2x", "4x", "8x"])
+    ax.set_xticklabels(["\u00d70.25", "\u00d70.5", "\u00d71", "\u00d72", "\u00d74", "\u00d78"])
+    ax.xaxis.set_minor_locator(matplotlib.ticker.NullLocator())
     ax.set_yticks(y)
-    ax.set_yticklabels(t.label, fontsize=9, color=INK)
-    ax.text(0.95, len(t) - 0.1, "less likely to churn  ", ha="right", color=INK_2, fontsize=8.5)
-    ax.text(1.05, len(t) - 0.1, "  more likely to churn", ha="left", color=INK_2, fontsize=8.5)
-    ax.set_ylim(-0.6, len(t) + 0.4)
-    fig.suptitle("What goes with churn when the other factors are held equal", x=0.01, ha="left", color=INK,
-                 fontsize=11.5, fontweight="bold")
-    fig.text(0.01, 0.015, "Each row compares sites that differ in that one factor but match on all the others shown. "
-             "2x means twice the odds of not renewing.\nOrange: significant (p < 0.05). Line: 95% interval; a line "
-             "that crosses 1x means no clear difference. 431 sites, logistic regression.",
-             color=INK_2, fontsize=7.5)
-    fig.subplots_adjust(bottom=0.17, top=0.9, left=0.3, right=0.97)
+    ax.set_yticklabels(t.label, color=INK)
+    ax.text(0.93, len(t) - 0.2, "less likely to leave", ha="right", color=INK_2, fontsize=10.5)
+    ax.text(1.07, len(t) - 0.2, "more likely to leave", ha="left", color=INK_2, fontsize=10.5)
+    ax.set_ylim(-0.6, len(t) + 0.3)
     fig.savefig(FIG / "what_goes_with_churn.png", facecolor=SURFACE)
     plt.close(fig)
 
@@ -720,7 +723,7 @@ def follow_ups(con, results):
     per_site = con.execute("""
         select case when s.region = 'EU' then 'EU (distributor)' else 'Direct (NA, APAC)' end as g,
                count(t.ticket_id) * 1.0 / count(distinct s.site_id)
-        from stg_sites s left join stg_support_tickets t using (site_id) group by 1
+        from stg_sites s left join stg_support_tickets t using (site_id) group by 1 order by 1
     """).fetchall()
     # Each exposed site's QC rejection tickets before its decision, any time in the window.
     qt = con.execute("""
@@ -860,71 +863,60 @@ def follow_ups(con, results):
 
     results["follow_ups"] = out
 
-    # Figure: three panels, one axis each.
-    G, COL = ["Direct (NA, APAC)", "EU (distributor)"], {"Direct (NA, APAC)": BLUE, "EU (distributor)": ORANGE}
-    fig, axes = plt.subplots(3, 1, figsize=(9, 12.5), dpi=150, facecolor=SURFACE, gridspec_kw={"hspace": 0.7})
-    for ax in axes:
-        style(ax)
-        ax.grid(axis="y", visible=False)
-        ax.grid(axis="x", color=GRID, linewidth=0.8)
-
-    def head(ax, title, sub):
-        ax.text(0, 1.17, title, transform=ax.transAxes, fontsize=12, weight="bold", color=INK)
-        ax.text(0, 1.06, sub, transform=ax.transAxes, fontsize=9, color=INK_2)
-
-    def bars(ax, rows, xmax, xlabel):
-        y, ticks, labels = 0, [], []
-        for group in rows:
-            for label, g, val, lo, hi, note in group:
-                ax.barh(y, val, height=0.62, color=COL[g])
-                ax.plot([lo, hi], [y, y], color=INK, linewidth=1.3)
-                ax.text(hi + xmax * 0.015, y, note, va="center", fontsize=9, color=INK)
-                ticks.append(y); labels.append(f"{label}\n{g}"); y += 1
-            y += 0.5
-        ax.set_yticks(ticks, labels, fontsize=8.5)
-        ax.invert_yaxis(); ax.set_xlim(0, xmax); ax.set_xlabel(xlabel, color=INK_2, fontsize=9)
-
+    # Figure: three panels side by side. Blue is Europe, grey is the direct channel; orange
+    # stays reserved for the affected firmware.
+    G = ["Direct (NA, APAC)", "EU (distributor)"]
+    COL = {G[0]: GREY, G[1]: BLUE}
+    fig, axes = slide("European support is slower, but the sites that left didn't wait longer",
+                      "First-response times and churn, by sales channel",
+                      "Source: Halvard support tickets and subscriptions. Panel C: sites that ran the affected firmware "
+                      f"and filed a QC rejection ticket before renewal, {len(w)} sites.",
+                      ncols=3, gridspec_kw={"width_ratios": [1, 1, 1.1], "wspace": 0.35})
+    fig.subplots_adjust(top=0.72, bottom=0.2, left=0.06, right=0.97)
+    legend_row(fig, [(GREY, "Direct (North America and APAC)"), (BLUE, "Europe, through the distributor")])
     r = resp.set_index(["ticket_type", "region_group"])
-    bars(axes[0], [[(t, g, r.loc[(t, g), "median"], r.loc[(t, g), "q25"], r.loc[(t, g), "q75"],
-                     f"{r.loc[(t, g), 'median']:.1f} h  (n = {int(r.loc[(t, g), 'n']):,})") for g in G]
-                   for t in ["QC rejection", "All other"]],
-         42, "Hours to first human response  (bar = median, line = middle half of tickets)")
-    head(axes[0], "A.  European tickets wait longer, for every kind of ticket",
-         "All support tickets in the year, by sales channel. Mann-Whitney U, p < 0.001 for both ticket types")
-    rows = []
-    for x, lab in [("yes", "Ran the affected firmware"), ("no", "Did not")]:
-        grp = []
-        for g in G:
-            d = s[(s.affected_exposure == x) & (s.region_group == g)]
-            k, n = int(d.churn.sum()), len(d)
-            lo, hi = wilson(k, n)
-            grp.append((lab, g, 100 * k / n, 100 * lo, 100 * hi, f"{k / n:.1%}  ({k} of {n})"))
-        rows.append(grp)
-    bars(axes[1], rows, 70, "Sites that churned (%)  (line = 95% Wilson interval)")
-    ec = out["eu_channel"]
-    head(axes[1], "B.  European churn is high where the site ran the affected firmware",
-         f"Main cohort, {len(s)} sites. Fisher's exact test: ran it, p = {ec['exposed_churn_eu_vs_direct']['p']:.3f}; "
-         f"did not, p = {ec['unexposed_churn_eu_vs_direct']['p']:.2f}")
+    ax = axes[0]
+    for j2, g in enumerate(G):
+        x = np.arange(2) + (j2 - 0.5) * 0.38
+        vals = [r.loc[(tt, g), "median"] for tt in ["QC rejection", "All other"]]
+        ax.bar(x, vals, width=0.36, color=COL[g], zorder=3)
+        for xi, v in zip(x, vals):
+            ax.text(xi, v + 0.5, f"{v:.1f} h", ha="center", va="bottom", fontsize=10.5, color=INK)
+    ax.set_xticks([0, 1], ["QC rejection\ntickets", "All other\ntickets"], color=INK)
+    ax.set_ylim(0, 28)
+    ax.set_title("A.  Median hours to first response", loc="left", color=INK, fontsize=11.5, fontweight="bold")
+    ax = axes[1]
+    counts = []
+    for j2, g in enumerate(G):
+        x = np.arange(2) + (j2 - 0.5) * 0.38
+        vals, ns = [], []
+        for e in ["yes", "no"]:
+            d = s[(s.affected_exposure == e) & (s.region_group == g)]
+            vals.append(d.churn.mean()); ns.append(len(d))
+        counts.append(ns)
+        ax.bar(x, vals, width=0.36, color=COL[g], zorder=3)
+        for xi, v in zip(x, vals):
+            ax.text(xi, v + 0.01, f"{v:.0%}", ha="center", va="bottom", fontsize=10.5, color=INK)
+    ax.set_xticks([0, 1], [f"Ran the affected\nfirmware\n{counts[0][0]} / {counts[1][0]} sites",
+                           f"Did not\n\n{counts[0][1]} / {counts[1][1]} sites"], color=INK)
+    ax.set_ylim(0, 0.5)
+    ax.yaxis.set_major_formatter(matplotlib.ticker.PercentFormatter(1.0, decimals=0))
+    ax.set_title("B.  Share of sites that left", loc="left", color=INK, fontsize=11.5, fontweight="bold")
     ax = axes[2]
     rng = np.random.default_rng(7)
-    for i, (o, lab) in enumerate([(0, "Renewed"), (1, "Churned")]):
+    for i2, o in enumerate([0, 1]):
         d = w[w.churn == o]
         for g in G:
             dd = d[d.region.eq("EU") == (g == G[1])]
-            ax.scatter(dd.median_response_hrs, i + rng.uniform(-0.13, 0.13, len(dd)), s=60, color=COL[g],
-                       edgecolor=SURFACE, linewidth=1.5, zorder=3, label=g if o == 0 else None)
+            ax.scatter(i2 + rng.uniform(-0.15, 0.15, len(dd)), dd.median_response_hrs, s=55, color=COL[g],
+                       edgecolor=SURFACE, linewidth=1.2, zorder=3)
         m = d.median_response_hrs.median()
-        ax.plot([m, m], [i - 0.3, i + 0.3], color=INK, linewidth=2)
-        ax.text(m, i - 0.36, f"median {m:.1f} h", ha="center", fontsize=9, color=INK)
-    ax.set_yticks([0, 1], [f"Renewed\n({(w.churn == 0).sum()} sites)", f"Churned\n({(w.churn == 1).sum()} sites)"], fontsize=8.5)
-    ax.set_ylim(-0.7, 1.5); ax.invert_yaxis()
-    ax.set_xlabel("Median hours to first response on the site's QC rejection tickets", color=INK_2, fontsize=9)
-    ax.legend(frameon=False, loc="lower right", fontsize=9)
-    rc = ec["response_churned_vs_renewed"]
-    head(ax, "C.  Among sites that filed a QC ticket, churned sites did not wait longer",
-         f"Sites that ran the affected firmware and filed before their decision. Mann-Whitney U, p = {rc['mannwhitney_p']:.2f}; "
-         f"only {rc['churned']} churned")
-    fig.savefig(FIG / "eu_support_churn.png", facecolor=SURFACE, bbox_inches="tight")
+        ax.plot([i2 - 0.3, i2 + 0.3], [m, m], color=INK, linewidth=2, zorder=4)
+        ax.text(i2 + 0.33, m, f"median\n{m:.0f} h", va="center", fontsize=10, color=INK)
+    ax.set_xticks([0, 1], [f"Renewed\n{(w.churn == 0).sum()} sites", f"Left\n{(w.churn == 1).sum()} sites"], color=INK)
+    ax.set_xlim(-0.5, 1.9)
+    ax.set_title("C.  Hours to first response, QC tickets", loc="left", color=INK, fontsize=11.5, fontweight="bold")
+    fig.savefig(FIG / "eu_support_churn.png", facecolor=SURFACE)
     plt.close(fig)
 
 
