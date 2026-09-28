@@ -1354,6 +1354,31 @@ display(table("churn_by_qc_band"))
 </div>
 
 
+**Two rules changed, to see whether the answer moves.** The nine notice sites, counted as renewed and
+then as lost, and the lookback window from 30 days to all the data before each decision. Each
+comparison uses Fisher's exact test; the notice check also repeats the regression.
+
+
+```python
+for name, r in fu["robustness_notice"].items():
+    print(f"Notice sites {name.replace('_', ' ')}: ran it {r['a'][0]}/{r['a'][1]} = {r['a'][0]/r['a'][1]:.1%}, "
+          f"did not {r['b'][0]}/{r['b'][1]} = {r['b'][0]/r['b'][1]:.1%}; adjusted odds {r['adjusted_odds_ratio']:.2f}, p = {r['adjusted_p']:.3f}")
+for w in fu["robustness_window"]:
+    print(f"Window {w['days']} days: {w['sites']} sites, ran it {w['a'][0]}/{w['a'][1]} = {w['a'][0]/w['a'][1]:.1%}, "
+          f"did not {w['b'][0]}/{w['b'][1]} = {w['b'][0]/w['b'][1]:.1%}, p = {w['p']:.4f}")
+```
+
+    Notice sites left out: ran it 35/136 = 25.7%, did not 32/295 = 10.8%; adjusted odds 2.29, p = 0.005
+    Notice sites as renewed: ran it 35/141 = 24.8%, did not 32/299 = 10.7%; adjusted odds 2.22, p = 0.007
+    Notice sites as lost: ran it 40/141 = 28.4%, did not 36/299 = 12.0%; adjusted odds 2.54, p = 0.001
+    Window 30 days: 469 sites, ran it 22/101 = 21.8%, did not 52/368 = 14.1%, p = 0.0659
+    Window 60 days: 446 sites, ran it 31/129 = 24.0%, did not 39/317 = 12.3%, p = 0.0038
+    Window 90 days: 431 sites, ran it 35/136 = 25.7%, did not 32/295 = 10.8%, p = 0.0002
+    Window 120 days: 418 sites, ran it 35/135 = 25.9%, did not 30/283 = 10.6%, p = 0.0001
+    Window 180 days: 219 sites, ran it 20/82 = 24.4%, did not 19/137 = 13.9%, p = 0.0671
+    Window all days: 487 sites, ran it 36/143 = 25.2%, did not 39/344 = 11.3%, p = 0.0003
+
+
 **Normal churn and group-size limits.** Normal churn is the rate for sites that did not run the
 affected firmware. A group breaches normal when its rate is above the center line plus 1.96 standard
 errors for its size, so the limit widens for small groups.

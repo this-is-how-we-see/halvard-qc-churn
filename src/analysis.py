@@ -733,6 +733,56 @@ def follow_ups(con, results):
         "5pct_did_not_run_defect": cut(0.05, q[q.affected_exposure == "no"]),
         "median_qc_runs_per_site_90d": float((q.qc_pass + q.qc_fail).median())}
 
+    # D15. Two rules the main comparison depends on, changed to see whether the answer moves.
+    # (a) The nine notice sites are left out, because their last renewal fell before the defect
+    # reached the fleet. Here they are counted as renewed, then as lost, exposed if they ever
+    # ran the affected combination. (b) The 90-day window. Each window keeps only the sites
+    # with that much data before their decision, and "all" uses everything before it.
+    def compare(d):
+        a, b = d[d.affected_exposure == "yes"], d[d.affected_exposure == "no"]
+        d = d.assign(log_runs=np.log1p(d.runs_90d))
+        m = smf.logit("churn ~ C(affected_exposure) + C(region, Treatment('NA-East')) + C(segment)"
+                      " + C(tier) + log_runs", data=d).fit(disp=0)
+        k = "C(affected_exposure)[T.yes]"
+        return {**fisher(kn(a), kn(b)), "adjusted_odds_ratio": float(np.exp(m.params[k])),
+                "adjusted_p": float(m.pvalues[k])}
+    cols = ["site_id", "region", "segment", "tier", "runs_90d", "affected_exposure", "churn"]
+    ever = set(con.execute("""
+        select distinct i.site_id from stg_instruments i join stg_runs r using (instrument_id)
+        where i.model = 'HX-200' and r.assay_type = 'IA-Panel-3' and r.firmware_version in ('4.1.0', '4.1.1')
+    """).df().site_id)
+    nt = con.execute("select site_id, region, segment, tier, coalesce(runs_90d, 0) as runs_90d "
+                     "from site_renewal where status = 'notice'").df()
+    nt["affected_exposure"] = np.where(nt.site_id.isin(ever), "yes", "no")
+    out["robustness_notice"] = {
+        "left_out": compare(s[cols]),
+        "as_renewed": compare(pd.concat([s[cols], nt.assign(churn=0)[cols]])),
+        "as_lost": compare(pd.concat([s[cols], nt.assign(churn=1)[cols]]))}
+    allsites = con.execute("""
+        select site_id, churned::int as churn, decision_date from site_renewal
+        where status <> 'notice' and cohort <> 'status_conflict'
+    """).df()
+    allsites["decision_date"] = pd.to_datetime(allsites.decision_date)
+    aff = con.execute("""
+        select i.site_id, r.run_date from stg_runs r join stg_instruments i using (instrument_id)
+        where i.model = 'HX-200' and r.assay_type = 'IA-Panel-3' and r.firmware_version in ('4.1.0', '4.1.1')
+    """).df()
+    aff["run_date"] = pd.to_datetime(aff.run_date)
+    aff = aff.merge(allsites[["site_id", "decision_date"]], on="site_id")
+    aff = aff[aff.run_date < aff.decision_date]
+    start = pd.Timestamp("2025-09-01")
+    windows = []
+    for days in [30, 60, 90, 120, 180, None]:
+        if days is None:
+            coh, ran = allsites, set(aff.site_id)
+        else:
+            coh = allsites[allsites.decision_date >= start + pd.Timedelta(days=days)]
+            ran = set(aff[aff.run_date >= aff.decision_date - pd.Timedelta(days=days)].site_id)
+        yes = coh.site_id.isin(ran)
+        windows.append({"days": days if days else "all", "sites": int(len(coh)),
+                        **fisher(kn(coh[yes]), kn(coh[~yes]))})
+    out["robustness_window"] = windows
+
     # D7. European research labs, by exposure.
     er = s[(s.region == "EU") & (s.segment == "research")]
     out["eu_research_labs"] = fisher(kn(er[er.affected_exposure == "yes"]), kn(er[er.affected_exposure == "no"]))
