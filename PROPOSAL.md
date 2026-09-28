@@ -24,7 +24,7 @@ The lost renewals came from a firmware defect that Halvard's telemetry showed wi
 
 ## What we wouldn't do
 
-- A Plus-tier QC alert as scoped. Of the 35 lost sites that ran the affected firmware, 28 were on Basic, and labs already see failures on the instrument. We'd revisit a Plus feature after a quarter of fleet data.
+- QC alerting as a Plus-tier feature. A QC failure from Halvard's firmware is Halvard's defect to catch, so any customer alert goes to every tier. Of the 35 lost sites that ran the affected firmware, 28 were on Basic.
 - Territory cuts for renewal calls. A group needs about 80 sites before its churn rate is reliable, and no territory has that many.
 - Changes to European support yet. European churn and response times are both high, but we'd need the distributor's ticket data first.
 

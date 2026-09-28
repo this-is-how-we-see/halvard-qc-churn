@@ -24,9 +24,9 @@ Users filed the first QC rejection ticket 14 days after 4.1.0 shipped, and all 7
 
 European sites that ran the affected firmware churned at 41%, against 16% for direct sites (p = 0.002). In NA-East, sites that ran it churned no more than others, 11% against 13%. European tickets of every kind wait about three times longer for a first response. For QC rejection tickets, it was 22.8 hours against 6.2. We need more data to say whether the slower response caused the churn, because churned sites that filed a QC ticket didn't wait longer.
 
-## Would a Plus-tier alert have helped?
+## Should QC alerting be a Plus feature?
 
-A Plus-tier alert would have reached few of the lost sites, because 28 of the 35 lost sites that ran the affected firmware were on Basic. Only five of them filed a QC rejection ticket before deciding. Labs saw the failures on the instrument, and 4.1.2 has removed the cause. **The gap was between a clear signal in Halvard's telemetry and a fix in the field.**
+A QC failure from Halvard's firmware is Halvard's defect to catch, so QC alerting belongs in every tier. A Plus-only alert would also have missed most of the 35 lost sites, because 28 were on Basic. Only five of the 35 filed a QC rejection ticket before deciding. **The gap was between a clear signal in Halvard's telemetry and a fix in the field.**
 
 Release testing is the other gap. A curve-fit change is normally verified with controls on real instruments, but the defect appeared only on the HX-200, and the HX-200 Plus ran IA-Panel-3 at about 4% on the same firmware. Testing most likely missed that combination. PROPOSAL.md covers instrument simulators that test every model and assay before release, a fleet QC view and a rollback path.
 
