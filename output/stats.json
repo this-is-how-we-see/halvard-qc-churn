@@ -719,6 +719,16 @@
       "filed_in_90d_window": 4,
       "filed_before_decision": 5,
       "filed_ever": 6
+    },
+    "lost_exposed_by_tier": {
+      "Basic": 28,
+      "Plus": 7
+    },
+    "affected_runs_passed_qc": {
+      "passed_runs": 1340,
+      "qc_runs": 2208,
+      "samples": 68649,
+      "sites": 207
     }
   }
 }

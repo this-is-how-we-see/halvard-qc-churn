@@ -961,6 +961,21 @@ def follow_ups(con, results):
         "lost_sites": int(len(lt)), "filed_in_90d_window": results["ticket_filed_vs_churn"]["filed"][0],
         "filed_before_decision": int((lt.before_decision > 0).sum()), "filed_ever": int((lt.ever > 0).sum())}
 
+    # D17. Two counts the documents cite. The tier of the lost sites that ran the defect, which
+    # is what a Plus-only alert could have reached. And the samples in runs on the affected
+    # combination that passed QC anyway, which is the size of the patient-results risk.
+    lost = exp[exp.churn == 1]
+    out["lost_exposed_by_tier"] = {t: int(n) for t, n in lost.tier.value_counts().items()}
+    passed = con.execute("""
+        select count(*) filter (where r.qc_status = 'pass') as passed_runs,
+               count(*) filter (where r.qc_status in ('pass', 'fail')) as qc_runs,
+               sum(r.sample_count) filter (where r.qc_status = 'pass') as samples,
+               count(distinct i.site_id) filter (where r.qc_status = 'pass') as sites
+        from stg_runs r join stg_instruments i using (instrument_id)
+        where i.model = 'HX-200' and r.assay_type = 'IA-Panel-3' and r.firmware_version in ('4.1.0', '4.1.1')
+    """).df().iloc[0]
+    out["affected_runs_passed_qc"] = {k: int(v) for k, v in passed.items()}
+
     results["follow_ups"] = out
 
     # Figure: three panels side by side. Blue is Europe, grey is the direct channel; orange

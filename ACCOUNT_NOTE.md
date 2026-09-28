@@ -1,14 +1,15 @@
 To: Quarry account lead · Internal, not for Halvard
 
-Dana's question is answered. The lost renewals came from the 4.1.0 firmware defect. Sites that ran it churned at 26%, against about 11% normal, costing $94,000 to $156,000 in ARR. QC alerting can't be a paid Plus feature, since the defect was Halvard's. PROPOSAL starts with a renewal list, then a fleet QC view, a rollback path and a simulator pilot.
+The lost renewals came from the 4.1.0 firmware defect. Sites that ran it churned at 26%, against 11% normal, costing $94,000 to $156,000 in ARR. QC alerting can't be a paid Plus feature, since the defect was Halvard's. PROPOSAL starts with a renewal list, then a fleet QC view.
 
 Risks:
 
-- Patient results. About 60% of HX-200 IA-Panel-3 runs on the affected firmware passed QC under the faulty curve fit, so some reported results may be wrong. No client document mentions it, and how it reaches Halvard's quality team is your call.
-- Marcus. He asked me for QBR slides and a notebook for Sales. I said yes to the slides, through Dana, and the notebook only after a walkthrough, though I'd prefer a summary. Dana should brief him on the tier decision before Thursday.
+- Patient results. About 60% of HX-200 IA-Panel-3 runs on the affected firmware passed QC under the faulty curve fit, covering about 69,000 samples at 207 sites, so some reported results may be wrong. No client document mentions it, and I'd like Halvard's quality lead told by Friday.
+- Marcus. I said yes to his QBR slides, through Dana, and the Sales notebook only after a walkthrough, though I'd prefer a summary. Dana should brief him on the tier decision before Thursday.
 - Scope. Requests are arriving from outside Dana, so I proposed she approves anything over 2 hours.
+- Retainer. It ends in month 12, so this quarter's results are the case for renewing it.
 
 What I need from you:
 
-- A decision on how the patient-results risk goes to Halvard, this week.
+- Your call on who tells Halvard's quality lead, by Friday.
 - Backing on the request rule with Marcus.

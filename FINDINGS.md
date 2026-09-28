@@ -18,14 +18,14 @@ Users filed the first QC rejection ticket 14 days after 4.1.0 shipped, and all 7
 
 ![Churn by segment and region](output/figures/churn_by_segment_region.png)
 
-*Research labs that ran the affected firmware churned at 38%, against 19% for those that didn't. The whole difference is in Europe, at 74% (14 of 19) against 22% (4 of 18), while direct research labs churned at 18% either way.*
+*Research labs that ran the affected firmware churned at 38%, against 19% for those that didn't. Most of the difference is in Europe, at 74% (14 of 19) against 22% (4 of 18), and it holds after correcting for the 12 groups checked (p = 0.035). Direct research labs churned at 18% either way.*
 
-European sites that ran the affected firmware churned at 41%, against 16% for direct sites (p = 0.002). In NA-East, sites that ran it churned no more than others, 11% against 13%. European tickets wait about three times longer for a first response. For QC rejection tickets, it was 22.8 hours against 6.2. We need more data to say whether the slower response caused the churn, because churned sites that filed a QC ticket didn't wait longer.
+European sites that ran the affected firmware churned at 41%, against 16% for direct sites (p = 0.002). European QC rejection tickets waited 22.8 hours for a first response, against 6.2. We need more data to say whether the slower response caused the churn, because churned sites that filed a QC ticket didn't wait longer.
 
 ## Should QC alerting be a Plus feature?
 
-A QC failure from Halvard's firmware is Halvard's defect to catch, so QC alerting belongs in every tier. A Plus-only alert would also have missed most of the 35 lost sites, because 28 were on Basic. Only five of the 35 filed a QC rejection ticket before deciding. **The gap was between a clear signal in Halvard's telemetry and a fix in the field.**
+A QC failure from Halvard's firmware is Halvard's defect to catch, so QC alerting belongs in every tier. A Plus-only alert would have reached 7 of the 35 lost sites, and those labs already saw the failures on the instrument, so as a Plus feature its value at renewal is close to zero. Only five of the 35 filed a QC rejection ticket before deciding. **The gap was between a clear signal in Halvard's telemetry and a fix in the field.**
 
-Release testing is the other gap. The defect appeared only on the HX-200. The HX-200 Plus ran IA-Panel-3 at about 4% on the same firmware, and Plus sites that ran it churned at the normal rate, 10.8%. PROPOSAL.md starts with the affected sites still due to renew, then covers a fleet QC view, a rollback path and instrument simulators that test every model and assay before release.
+Release testing is the other gap. The defect appeared only on the HX-200. The HX-200 Plus ran IA-Panel-3 at about 4% on the same firmware, and the 37 Plus sites that ran it churned at 10.8%, consistent with no effect, though too few to rule out a moderate one. PROPOSAL.md starts with the affected sites still due to renew.
 
 With one renewal cycle, normal churn of 11% is an estimate, likely 8% to 15%.
