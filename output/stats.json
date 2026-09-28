@@ -6,11 +6,11 @@
       16.55436843941197,
       22.82346181027196
     ],
-    "firmware_lr_chi2": 1645.925868074487,
+    "firmware_lr_chi2": 1645.9258680744852,
     "firmware_p": 0.0,
-    "month_lr_chi2": 5.360522165203292,
+    "month_lr_chi2": 5.360522165201473,
     "month_df": 11,
-    "month_p": 0.9124581254437374
+    "month_p": 0.912458125443838
   },
   "lot_same_window": {
     "affected": [
@@ -314,6 +314,12 @@
     "still_on_affected_at_extract": {
       "HX-200 4.1.0": 49,
       "HX-200 Plus 4.1.0": 27
+    },
+    "lost_exposed_qc_ticket": {
+      "lost_sites": 35,
+      "filed_in_90d_window": 4,
+      "filed_before_decision": 5,
+      "filed_ever": 6
     }
   }
 }

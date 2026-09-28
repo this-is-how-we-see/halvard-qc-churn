@@ -26,7 +26,7 @@ European sites that ran the affected firmware churned at 41%, against 16% for di
 
 ## Would a Plus-tier alert have helped?
 
-A Plus-tier alert would have reached few of the lost sites, because 28 of the 35 lost sites that ran the affected firmware were on Basic. Labs saw the failures on the instrument, and 4.1.2 has removed the cause. **The gap was between a clear signal in Halvard's telemetry and a fix in the field.**
+A Plus-tier alert would have reached few of the lost sites, because 28 of the 35 lost sites that ran the affected firmware were on Basic. Only five of them filed a QC rejection ticket before deciding. Labs saw the failures on the instrument, and 4.1.2 has removed the cause. **The gap was between a clear signal in Halvard's telemetry and a fix in the field.**
 
 Release testing is the other gap. A curve-fit change is normally verified with controls on real instruments, but the defect appeared only on the HX-200, and the HX-200 Plus ran IA-Panel-3 at about 4% on the same firmware. Testing most likely missed that combination. PROPOSAL.md covers instrument simulators that test every model and assay before release, a fleet QC view and a rollback path.
 

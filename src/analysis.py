@@ -861,6 +861,23 @@ def follow_ups(con, results):
     """).df()
     out["still_on_affected_at_extract"] = {f"{r.model} {r.fw}": int(r.n) for r in still.itertuples()}
 
+    # D12. Lost sites that ran the affected firmware and filed a QC rejection ticket.
+    # Part B counts tickets in the 90-day window only; FINDINGS says "before deciding",
+    # so this counts any ticket before the decision date, and any ticket at all.
+    con.register("lost_exposed", exp[exp.churn == 1][["site_id", "decision_date"]])
+    lt = con.execute("""
+        select l.site_id,
+               count(t.site_id) filter (where t.opened_ts < l.decision_date) as before_decision,
+               count(t.site_id) as ever
+        from lost_exposed l
+        left join stg_support_tickets t on t.site_id = l.site_id and t.category = 'qc_rejection'
+        group by 1 order by 1
+    """).df()
+    con.unregister("lost_exposed")
+    out["lost_exposed_qc_ticket"] = {
+        "lost_sites": int(len(lt)), "filed_in_90d_window": results["ticket_filed_vs_churn"]["filed"][0],
+        "filed_before_decision": int((lt.before_decision > 0).sum()), "filed_ever": int((lt.ever > 0).sum())}
+
     results["follow_ups"] = out
 
     # Figure: three panels side by side. Blue is Europe, grey is the direct channel; orange
