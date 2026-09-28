@@ -77,7 +77,11 @@ The clock started at the data pack download. Times are elapsed.
 | 2:10 to 2:45 | Follow-up checks from the reviews, the check-in |
 | 2:45 to 3:05 | FINDINGS, the walkthrough notebook, the smallest group worth reporting |
 | 3:05 to 3:35 | PROPOSAL, BACKLOG_001 with its backtest, CLIENT_REPLY, ACCOUNT_NOTE |
-| 3:35 onward | README, pull request and self-review, walkthrough video |
+| 3:35 to 4:12 | README, pull request and self-review, figure redraws |
+| 4:12 to 4:47 | QC-ticket check (D12), QC alerting for every tier, the walkthrough deck |
+| 4:47 to 5:17 | Churn by region and lab type figure, the walkthrough video |
+
+Total: 5:17 of the 6 hours. Some slide formatting for the video was done off the clock.
 
 ## How AI was used
 
