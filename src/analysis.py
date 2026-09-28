@@ -2,7 +2,7 @@
 
 Usage:  python src/analysis.py   (run src/build.py first)
 Writes: output/tables/*.csv, output/stats.json,
-        output/figures/lot_test_by_firmware.png, output/figures/lot_test_event_time.png,
+        output/figures/lot_test_event_time.png,
         output/figures/adoption_and_failures.png, output/figures/visible_before_fixed.png,
         output/figures/churn_by_segment_region.png, output/figures/what_goes_with_churn.png,
         output/figures/eu_support_churn.png, output/figures/lost_by_region_and_lab.png
@@ -32,6 +32,7 @@ import pandas as pd
 import statsmodels.formula.api as smf
 from scipy import stats
 from statsmodels.stats.proportion import proportion_confint, proportions_ztest
+from statsmodels.stats.multitest import multipletests
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -183,29 +184,6 @@ def lot_test(con, results):
     wk = rate_table(e[(e.week >= -8) & (e.week <= 7)], "week", "fail")
     wk.to_csv(TAB / "lot_event_time.csv", index=False)
 
-    # Figure: same window by firmware.
-    fig, ax = plt.subplots(figsize=(8.5, 3.6), dpi=160, facecolor=SURFACE)
-    style(ax)
-    labels = [f"{g.replace(' · IA-Panel-3', '')}\n{f}" for g, f in zip(t.group, t.firmware)]
-    colors = [BLUE, BLUE, ORANGE, ORANGE, AQUA]
-    x = np.arange(len(t))
-    ax.errorbar(x, t.rate, yerr=[t.rate - t.ci_low, t.ci_high - t.rate], fmt="none",
-                ecolor=INK_2, elinewidth=1.2, capsize=4, zorder=2)
-    ax.scatter(x, t.rate, s=70, color=colors, zorder=3)
-    for xi, r, n in zip(x, t.rate, t.n):
-        ax.text(xi + 0.12, r, f"{r:.1%}\n{n:,} runs", color=INK, fontsize=8.5, va="center")
-    ax.set_xticks(x)
-    ax.set_xticklabels(labels, fontsize=8.5, color=INK)
-    ax.set_xlim(-0.5, len(t) - 0.2)
-    ax.set_ylim(0, 0.5)
-    ax.yaxis.set_major_formatter(matplotlib.ticker.PercentFormatter(1.0, decimals=0))
-    ax.set_title("IA-Panel-3 QC failure rate, December 2025 to March 2026, by firmware",
-                 loc="left", color=INK, fontsize=11, fontweight="bold")
-    fig.text(0.01, 0.01, "Same four months for every group, so the same control lots were on the market. "
-             "Bars: 95% Wilson intervals.", color=INK_2, fontsize=7.5)
-    fig.subplots_adjust(bottom=0.24, top=0.88, left=0.07, right=0.97)
-    fig.savefig(FIG / "lot_test_by_firmware.png", facecolor=SURFACE)
-    plt.close(fig)
 
     # Figure: event time around each instrument's own upgrade.
     r = results["lot_event_time"]
@@ -246,7 +224,6 @@ def adoption(con, results):
           and date_trunc('week', r.run_date) <  date '2026-08-31'
         group by 1 order by 1
     """).df()
-    w.to_csv(TAB / "adoption_weekly.csv", index=False)
     f = smf.wls("fail_rate ~ affected_share", data=w, weights=w.n).fit()
     results["adoption"] = {"weeks": int(len(w)), "intercept": float(f.params["Intercept"]),
                            "slope": float(f.params["affected_share"]), "r2": float(f.rsquared),
@@ -304,26 +281,11 @@ def comparison(con, results):
     qc = sites[sites.in_qc_comparison]
     tables = {
         "churn_by_qc_band": rate_table(qc, "qc_band", "churn"),
-        "churn_by_qc_band_check": rate_table(qc[~qc.partial_run_coverage], "qc_band", "churn"),
-        "churn_by_region": rate_table(sites, "region", "churn"),
         "churn_by_segment": rate_table(sites, "segment", "churn"),
-        "churn_by_tier": rate_table(sites, "tier", "churn"),
         "churn_by_affected_exposure": rate_table(sites, "affected_exposure", "churn"),
-        "churn_by_tickets": rate_table(sites, "tickets_band", "churn"),
-        "churn_by_app_use": rate_table(sites, "app_band", "churn"),
-        "churn_by_run_volume": rate_table(sites, "runs_band", "churn"),
-        "churn_by_qc_band_and_region": rate_table(qc, ["region_group", "qc_band"], "churn"),
-        "churn_by_exposure_and_region": rate_table(sites, ["region_group", "affected_exposure"], "churn"),
     }
     for name, t in tables.items():
         t.to_csv(TAB / f"{name}.csv", index=False)
-
-    # Median of each factor for churned against renewed sites.
-    cols = ["qc_fail_rate", "runs_90d", "app_events_90d_est", "qc_review_90d_est", "tickets_90d",
-            "median_first_response_hrs", "ia3_share", "fw_410_411_share", "n_instruments", "arr_usd"]
-    med = sites.groupby("churned")[cols].median().T.reset_index()
-    med.columns = ["factor", "renewed_median", "churned_median"]
-    med.to_csv(TAB / "factor_medians.csv", index=False)
 
     keep = ["C(affected", "C(region", "C(segment", "C(tier", "log_runs"]
 
@@ -337,16 +299,6 @@ def comparison(con, results):
     base = " + C(region, Treatment('NA-East')) + C(segment) + C(tier) + log_runs"
     m_exp = smf.logit("churn ~ C(affected_exposure)" + base, data=prep(sites)).fit(disp=0)
     odds_ratios(m_exp, keep).to_csv(TAB / "regression_exposure_no_mediators.csv", index=False)
-    path = sites.groupby("affected_exposure").agg(
-        sites=("site_id", "size"), median_tickets=("tickets_90d", "median"),
-        qc_rejection_tickets_per_site=("qc_rejection_tickets_90d", "mean"),
-        median_app_events=("app_events_90d_est", "median")).reset_index()
-    path.to_csv(TAB / "path_by_exposure.csv", index=False)
-    reg = sites.groupby("region_group").agg(
-        sites=("site_id", "size"), median_tickets=("tickets_90d", "median"),
-        median_first_response_hrs=("median_first_response_hrs", "median"),
-        median_app_events=("app_events_90d_est", "median")).reset_index()
-    reg.to_csv(TAB / "support_by_region.csv", index=False)
     results["regression"] = {"sites": int(m_exp.nobs), "churned": int(sites.churn.sum()),
                              "pseudo_r2": float(m_exp.prsquared)}
 
@@ -379,7 +331,6 @@ def customer_story(con, results):
         from stg_support_tickets t join stg_sites s using (site_id)
         where t.category = 'qc_rejection' group by 1, 2 order by 1, 2
     """).df()
-    q.to_csv(TAB / "qc_rejection_tickets_by_region.csv", index=False)
 
     # Detection: weekly HX-200 IA-Panel-3 runs on 4.1.0, tested against the 4.0.x baseline.
     base = con.execute("""
@@ -783,6 +734,39 @@ def follow_ups(con, results):
                         **fisher(kn(coh[yes]), kn(coh[~yes]))})
     out["robustness_window"] = windows
 
+    # D16. Three checks on the comparison. (a) A narrower comparison group: only sites that
+    # ran IA-Panel-3, first on an HX-200, then on any model. (b) A negative control: sites
+    # that ran IA-Panel-3 on the HX-200 Plus on 4.1.0 or 4.1.1, the same assay and firmware
+    # without the defect, against sites that ran neither. (c) The European research-lab
+    # result corrected for the 12 region and lab-type groups it was picked from (Holm).
+    ran = con.execute("""
+        select m.site_id,
+               bool_or(i.model = 'HX-200' and r.assay_type = 'IA-Panel-3') as hx_ia3,
+               bool_or(r.assay_type = 'IA-Panel-3') as any_ia3,
+               bool_or(i.model = 'HX-200 Plus' and r.assay_type = 'IA-Panel-3'
+                       and r.firmware_version in ('4.1.0', '4.1.1')) as plus_new_fw
+        from site_renewal m join stg_instruments i on i.site_id = m.site_id
+        join stg_runs r on r.instrument_id = i.instrument_id
+         and r.run_date >= m.decision_date - interval 90 day and r.run_date < m.decision_date
+        where m.cohort = 'main' group by 1
+    """).df()
+    c = s.merge(ran, on="site_id", how="left").fillna({"hx_ia3": False, "any_ia3": False, "plus_new_fw": False})
+    control = c[c.affected_exposure == "no"].assign(
+        affected_exposure=lambda d: np.where(d.plus_new_fw, "yes", "no"))
+    cells = []
+    for (region, segment), g in s.groupby(["region", "segment"]):
+        a, b = g[g.affected_exposure == "yes"], g[g.affected_exposure == "no"]
+        if len(a) and len(b):
+            cells.append({"region": region, "segment": segment, **fisher(kn(a), kn(b))})
+    holm = multipletests([x["p"] for x in cells], method="holm")[1]
+    for x, h in zip(cells, holm):
+        x["holm_p"] = float(h)
+    out["comparison_checks"] = {
+        "ran_ia3_on_hx200": compare(c[c.hx_ia3][cols]),
+        "ran_ia3_any_model": compare(c[c.any_ia3][cols]),
+        "negative_control_plus_new_firmware": compare(control[cols]),
+        "region_segment_holm": cells}
+
     # D7. European research labs, by exposure.
     er = s[(s.region == "EU") & (s.segment == "research")]
     out["eu_research_labs"] = fisher(kn(er[er.affected_exposure == "yes"]), kn(er[er.affected_exposure == "no"]))
@@ -797,6 +781,14 @@ def follow_ups(con, results):
         "at_mean_arr_of_exposed_churned": float(excess * ch.arr_usd.mean()),
         "at_mean_arr_of_all_exposed": float(excess * exp.arr_usd.mean()),
         "churned_arr_minus_expected": float(ch.arr_usd.sum() - base * exp.arr_usd.sum())}
+    # Normal churn is itself an estimate, so the excess also moves with its 95% interval.
+    # Priced at the mean ARR of the exposed sites that churned.
+    lo, hi = wilson(int(unexp.churn.sum()), len(unexp))
+    out["excess_arr_with_baseline_interval"] = {
+        "baseline_ci": [float(lo), float(hi)],
+        "excess_sites": [float(exp.churn.sum() - hi * len(exp)), float(exp.churn.sum() - lo * len(exp))],
+        "arr": [float((exp.churn.sum() - hi * len(exp)) * ch.arr_usd.mean()),
+                float((exp.churn.sum() - lo * len(exp)) * ch.arr_usd.mean())]}
 
     # D5. The European channel. First response by channel and ticket type.
     tk = con.execute("""
@@ -826,8 +818,6 @@ def follow_ups(con, results):
     e = exp.merge(qt, on="site_id", how="left")
     e["filed"] = e.n_qc.notna()
     w = e[e.filed]
-    w[["site_id", "region", "churn", "n_qc", "median_response_hrs"]].sort_values("median_response_hrs").to_csv(
-        TAB / "exposed_sites_qc_ticket_response.csv", index=False)
     eu, di = e[e.region_group == "EU (distributor)"], e[e.region_group != "EU (distributor)"]
     out["eu_channel"] = {
         "first_response_mannwhitney_p": mw, "tickets_per_site": {g: round(v, 1) for g, v in per_site},

@@ -1,6 +1,6 @@
 To: Quarry account lead · Internal, not for Halvard
 
-Dana's question is answered. The lost renewals came from the 4.1.0 firmware defect. Sites that ran it churned at 26%, against about 11% normal, costing $125,000 to $135,000 in ARR. QC alerting can't be a paid Plus feature, since the defect was Halvard's. PROPOSAL starts with a renewal list for Customer Success, then a fleet QC view, a rollback path and a simulator pilot.
+Dana's question is answered. The lost renewals came from the 4.1.0 firmware defect. Sites that ran it churned at 26%, against about 11% normal, costing $94,000 to $156,000 in ARR. QC alerting can't be a paid Plus feature, since the defect was Halvard's. PROPOSAL starts with a renewal list, then a fleet QC view, a rollback path and a simulator pilot.
 
 Risks:
 
@@ -10,5 +10,5 @@ Risks:
 
 What I need from you:
 
-- A decision on how the patient-results risk goes to Halvard.
+- A decision on how the patient-results risk goes to Halvard, this week.
 - Backing on the request rule with Marcus.

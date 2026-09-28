@@ -6,7 +6,7 @@
       16.55436843941197,
       22.82346181027196
     ],
-    "firmware_lr_chi2": 1645.925868074486,
+    "firmware_lr_chi2": 1645.9258680744852,
     "firmware_p": 0.0,
     "month_lr_chi2": 5.360522165201473,
     "month_df": 11,
@@ -324,6 +324,232 @@
         "p": 0.0002799551054644025
       }
     ],
+    "comparison_checks": {
+      "ran_ia3_on_hx200": {
+        "a": [
+          35,
+          136
+        ],
+        "b": [
+          24,
+          220
+        ],
+        "odds_ratio": 2.83003300330033,
+        "p": 0.0003813074878000616,
+        "adjusted_odds_ratio": 2.3735015520937295,
+        "adjusted_p": 0.005305562591527121
+      },
+      "ran_ia3_any_model": {
+        "a": [
+          35,
+          136
+        ],
+        "b": [
+          30,
+          277
+        ],
+        "odds_ratio": 2.8531353135313533,
+        "p": 0.00015987721254095955,
+        "adjusted_odds_ratio": 2.2776828998968575,
+        "adjusted_p": 0.005714708741725433
+      },
+      "negative_control_plus_new_firmware": {
+        "a": [
+          4,
+          37
+        ],
+        "b": [
+          28,
+          258
+        ],
+        "odds_ratio": 0.9956709956709957,
+        "p": 1.0,
+        "adjusted_odds_ratio": 0.9295228336123638,
+        "adjusted_p": 0.9047418344366661
+      },
+      "region_segment_holm": [
+        {
+          "region": "APAC",
+          "segment": "hospital_lab",
+          "a": [
+            2,
+            7
+          ],
+          "b": [
+            2,
+            18
+          ],
+          "odds_ratio": 3.2,
+          "p": 0.5484584980237154,
+          "holm_p": 1.0
+        },
+        {
+          "region": "APAC",
+          "segment": "reference_lab",
+          "a": [
+            0,
+            5
+          ],
+          "b": [
+            0,
+            13
+          ],
+          "odds_ratio": NaN,
+          "p": 1.0,
+          "holm_p": 1.0
+        },
+        {
+          "region": "APAC",
+          "segment": "research",
+          "a": [
+            2,
+            5
+          ],
+          "b": [
+            3,
+            14
+          ],
+          "odds_ratio": 2.4444444444444446,
+          "p": 0.5695734434124526,
+          "holm_p": 1.0
+        },
+        {
+          "region": "EU",
+          "segment": "hospital_lab",
+          "a": [
+            4,
+            18
+          ],
+          "b": [
+            6,
+            44
+          ],
+          "odds_ratio": 1.8095238095238095,
+          "p": 0.4569684297179183,
+          "holm_p": 1.0
+        },
+        {
+          "region": "EU",
+          "segment": "reference_lab",
+          "a": [
+            3,
+            14
+          ],
+          "b": [
+            2,
+            22
+          ],
+          "odds_ratio": 2.727272727272727,
+          "p": 0.3566176470588235,
+          "holm_p": 1.0
+        },
+        {
+          "region": "EU",
+          "segment": "research",
+          "a": [
+            14,
+            19
+          ],
+          "b": [
+            4,
+            18
+          ],
+          "odds_ratio": 9.8,
+          "p": 0.002918276139729929,
+          "holm_p": 0.035019313676759145
+        },
+        {
+          "region": "NA-East",
+          "segment": "hospital_lab",
+          "a": [
+            1,
+            15
+          ],
+          "b": [
+            5,
+            52
+          ],
+          "odds_ratio": 0.6714285714285714,
+          "p": 1.0,
+          "holm_p": 1.0
+        },
+        {
+          "region": "NA-East",
+          "segment": "reference_lab",
+          "a": [
+            0,
+            5
+          ],
+          "b": [
+            1,
+            17
+          ],
+          "odds_ratio": 0.0,
+          "p": 1.0,
+          "holm_p": 1.0
+        },
+        {
+          "region": "NA-East",
+          "segment": "research",
+          "a": [
+            3,
+            15
+          ],
+          "b": [
+            5,
+            18
+          ],
+          "odds_ratio": 0.65,
+          "p": 0.6991606835878249,
+          "holm_p": 1.0
+        },
+        {
+          "region": "NA-West",
+          "segment": "hospital_lab",
+          "a": [
+            4,
+            15
+          ],
+          "b": [
+            1,
+            38
+          ],
+          "odds_ratio": 13.454545454545455,
+          "p": 0.019121610908514348,
+          "holm_p": 0.21033771999365783
+        },
+        {
+          "region": "NA-West",
+          "segment": "reference_lab",
+          "a": [
+            1,
+            5
+          ],
+          "b": [
+            1,
+            16
+          ],
+          "odds_ratio": 3.75,
+          "p": 0.4285714285714286,
+          "holm_p": 1.0
+        },
+        {
+          "region": "NA-West",
+          "segment": "research",
+          "a": [
+            1,
+            13
+          ],
+          "b": [
+            2,
+            25
+          ],
+          "odds_ratio": 0.9583333333333334,
+          "p": 1.0,
+          "holm_p": 1.0
+        }
+      ]
+    },
     "eu_research_labs": {
       "a": [
         14,
@@ -341,6 +567,20 @@
       "at_mean_arr_of_exposed_churned": 129294.47941888619,
       "at_mean_arr_of_all_exposed": 135255.99451645065,
       "churned_arr_minus_expected": 124950.84745762713
+    },
+    "excess_arr_with_baseline_interval": {
+      "baseline_ci": [
+        0.07789197982172323,
+        0.14912290321496824
+      ],
+      "excess_sites": [
+        14.719285162764319,
+        24.40669074424564
+      ],
+      "arr": [
+        93993.14953936642,
+        155854.15375254
+      ]
     },
     "eu_channel": {
       "first_response_mannwhitney_p": {

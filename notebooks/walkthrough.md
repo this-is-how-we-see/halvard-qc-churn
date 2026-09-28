@@ -6,7 +6,7 @@ This notebook walks through the analysis in the order it was done. It reads the 
 scripts write, so it adds no new analysis and every number matches `output/stats.json`.
 
 To regenerate the outputs, put the data pack in `data/raw/halvard_data_pack/`, then run
-`python src/build.py`, `python src/analysis.py` and `python src/figures.py` from the repo root.
+`python src/build.py` and `python src/analysis.py` from the repo root.
 
 **p-value labels used throughout:** below 0.05 is *significant*; 0.05 to 0.25 is a *possible trend*;
 above 0.25 means *we need more data*.
@@ -559,7 +559,7 @@ display(table("detection_weekly"))
 </div>
 
 
-## 7. Follow-up checks
+## Appendix: follow-up checks
 
 These are exploratory. The primary test is the exposure comparison in section 5.
 
@@ -1379,6 +1379,158 @@ for w in fu["robustness_window"]:
     Window all days: 487 sites, ran it 36/143 = 25.2%, did not 39/344 = 11.3%, p = 0.0003
 
 
+**Three checks on the comparison.** A narrower comparison group, only sites that ran IA-Panel-3; a
+negative control, sites that ran IA-Panel-3 on the HX-200 Plus on 4.1.0 or 4.1.1, the same assay and
+firmware without the defect; and a Holm correction for the 12 region and lab-type groups the
+European research-lab result was picked from.
+
+
+```python
+cc = fu["comparison_checks"]
+for name, label in [("ran_ia3_on_hx200", "Only sites that ran IA-Panel-3 on an HX-200"),
+                    ("ran_ia3_any_model", "Only sites that ran IA-Panel-3 on any model"),
+                    ("negative_control_plus_new_firmware", "HX-200 Plus on 4.1.x (a) against neither (b)")]:
+    r = cc[name]
+    print(f"{label}: {r['a'][0]}/{r['a'][1]} = {r['a'][0]/r['a'][1]:.1%} against {r['b'][0]}/{r['b'][1]} = "
+          f"{r['b'][0]/r['b'][1]:.1%}; adjusted odds {r['adjusted_odds_ratio']:.2f}, p = {r['adjusted_p']:.3f}")
+display(pd.DataFrame([{"region": x["region"], "segment": x["segment"], "ran it": f"{x['a'][0]}/{x['a'][1]}",
+                       "did not": f"{x['b'][0]}/{x['b'][1]}", "p": round(x["p"], 4), "Holm p": round(x["holm_p"], 3)}
+                      for x in cc["region_segment_holm"]]))
+```
+
+    Only sites that ran IA-Panel-3 on an HX-200: 35/136 = 25.7% against 24/220 = 10.9%; adjusted odds 2.37, p = 0.005
+    Only sites that ran IA-Panel-3 on any model: 35/136 = 25.7% against 30/277 = 10.8%; adjusted odds 2.28, p = 0.006
+    HX-200 Plus on 4.1.x (a) against neither (b): 4/37 = 10.8% against 28/258 = 10.9%; adjusted odds 0.93, p = 0.905
+
+
+
+<div>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>region</th>
+      <th>segment</th>
+      <th>ran it</th>
+      <th>did not</th>
+      <th>p</th>
+      <th>Holm p</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>APAC</td>
+      <td>hospital_lab</td>
+      <td>2/7</td>
+      <td>2/18</td>
+      <td>0.548</td>
+      <td>1.000</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>APAC</td>
+      <td>reference_lab</td>
+      <td>0/5</td>
+      <td>0/13</td>
+      <td>1.000</td>
+      <td>1.000</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>APAC</td>
+      <td>research</td>
+      <td>2/5</td>
+      <td>3/14</td>
+      <td>0.570</td>
+      <td>1.000</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>EU</td>
+      <td>hospital_lab</td>
+      <td>4/18</td>
+      <td>6/44</td>
+      <td>0.457</td>
+      <td>1.000</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>EU</td>
+      <td>reference_lab</td>
+      <td>3/14</td>
+      <td>2/22</td>
+      <td>0.357</td>
+      <td>1.000</td>
+    </tr>
+    <tr>
+      <th>5</th>
+      <td>EU</td>
+      <td>research</td>
+      <td>14/19</td>
+      <td>4/18</td>
+      <td>0.003</td>
+      <td>0.035</td>
+    </tr>
+    <tr>
+      <th>6</th>
+      <td>NA-East</td>
+      <td>hospital_lab</td>
+      <td>1/15</td>
+      <td>5/52</td>
+      <td>1.000</td>
+      <td>1.000</td>
+    </tr>
+    <tr>
+      <th>7</th>
+      <td>NA-East</td>
+      <td>reference_lab</td>
+      <td>0/5</td>
+      <td>1/17</td>
+      <td>1.000</td>
+      <td>1.000</td>
+    </tr>
+    <tr>
+      <th>8</th>
+      <td>NA-East</td>
+      <td>research</td>
+      <td>3/15</td>
+      <td>5/18</td>
+      <td>0.699</td>
+      <td>1.000</td>
+    </tr>
+    <tr>
+      <th>9</th>
+      <td>NA-West</td>
+      <td>hospital_lab</td>
+      <td>4/15</td>
+      <td>1/38</td>
+      <td>0.019</td>
+      <td>0.210</td>
+    </tr>
+    <tr>
+      <th>10</th>
+      <td>NA-West</td>
+      <td>reference_lab</td>
+      <td>1/5</td>
+      <td>1/16</td>
+      <td>0.429</td>
+      <td>1.000</td>
+    </tr>
+    <tr>
+      <th>11</th>
+      <td>NA-West</td>
+      <td>research</td>
+      <td>1/13</td>
+      <td>2/25</td>
+      <td>1.000</td>
+      <td>1.000</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+
 **Normal churn and group-size limits.** Normal churn is the rate for sites that did not run the
 affected firmware. A group breaches normal when its rate is above the center line plus 1.96 standard
 errors for its size, so the limit widens for small groups.
@@ -1389,6 +1541,8 @@ facts(fu["churn_baseline"], "Normal churn")
 display(table("churn_baseline_by_segment"))
 display(table("churn_vs_baseline_limits"))
 facts(fu["excess_arr_range"], "Excess ARR, three ways")
+r = fu["excess_arr_with_baseline_interval"]
+print(f"Normal churn {r['baseline_ci'][0]:.1%} to {r['baseline_ci'][1]:.1%}: {r['excess_sites'][0]:.0f} to {r['excess_sites'][1]:.0f} extra lost sites, ${r['arr'][0]:,.0f} to ${r['arr'][1]:,.0f} in ARR")
 ```
 
 
@@ -1624,6 +1778,9 @@ facts(fu["excess_arr_range"], "Excess ARR, three ways")
   </tbody>
 </table>
 </div>
+
+
+    Normal churn 7.8% to 14.9%: 15 to 24 extra lost sites, $93,993 to $155,854 in ARR
 
 
 **The smallest group worth reporting.** A churn rate for a small group swings by chance. *Power

@@ -18,8 +18,7 @@ The data pack isn't in the repo, because the brief doesn't ask for it in a publi
 
 ```bash
 python src/build.py       # loads the CSVs into output/halvard.duckdb, builds the views, writes output/checks.md
-python src/analysis.py    # tests and tables: output/tables/, output/stats.json, most figures
-python src/figures.py     # the remaining figures
+python src/analysis.py    # tests, tables and figures: output/tables/, output/stats.json, output/figures/
 ```
 
 Every run starts from the raw CSVs and gives the same outputs. The DuckDB session runs in UTC, because the pack's timestamps are UTC and date casts depend on the session time zone. To rerun the notebook, run `jupyter nbconvert --to notebook --execute --inplace notebooks/walkthrough.ipynb`. `notebooks/walkthrough.md` is a Markdown export of the executed notebook, because GitHub's notebook viewer doesn't load in every browser setup. nbviewer is another way to read the notebook: https://nbviewer.org/github/this-is-how-we-see/halvard-qc-churn/blob/analysis/notebooks/walkthrough.ipynb
@@ -32,7 +31,7 @@ Every run starts from the raw CSVs and gives the same outputs. The DuckDB sessio
 | `sql/staging/` | One view per CSV, cleaning only |
 | `sql/marts/site_renewal.sql` | One row per site, with its decision date and the 90 days before it |
 | `sql/checks/checks.sql` | 34 data checks, each with its rule and the rule's source |
-| `src/analysis.py` | Part A lot test, Part B churn comparison, Part C customer story, Part D follow-up checks |
+| `src/analysis.py` | Part A lot test, Part B churn comparison, Part C customer story, Part D follow-up checks, D1 to D16, shown in the walkthrough's appendix |
 | `notebooks/` | The walkthrough: `walkthrough.md` to read on GitHub, `walkthrough.ipynb` to run |
 | `output/` | `checks.md`, `stats.json`, tables and figures |
 
@@ -82,7 +81,7 @@ The clock started at the data pack download. Times are elapsed.
 | 4:47 to 5:17 | Churn by region and lab type figure, the walkthrough video |
 | 5:17 to 5:32 | Refinement session after an outside review: the FINDINGS opener, the renewal list in PROPOSAL, the notebook reply to Marcus, the normal QC range |
 
-Total: 5:32 of the 6 hours. Between 5:17 and the refinement session, off the clock, I formatted the slides for an earlier version of the video, wrote the [wiki decisions page](https://github.com/this-is-how-we-see/halvard-qc-churn/wiki) that the final video follows, and corrected one number in BACKLOG_001 (2 weeks to 19 days). After the refinement session, with the clock paused, I coded the normal QC range as D13, moved the straight-line QC models and the 5% threshold into a set-aside section of the walkthrough, with the reason (D14), changed the BACKLOG_001 flag rule to a control limit set from data with an override, added D15, which changes the notice-site rule and the lookback window to see whether the answer moves, and reran the build and the notebook. The final recording isn't in the total.
+On the clock: 5:32. After the clock stopped at 12:32 on 28 September, about 1:55 more went into refinements after outside reviews: the normal QC range (D13), the set-aside checks (D14), the notice-site and window checks (D15), the narrower comparison and the negative control (D16), the control limit and override in BACKLOG_001, the rewrites of CLIENT_REPLY and ACCOUNT_NOTE, the wider ARR range, and removing figures and tables no document used. That brings the total to about 7:25, past the 6-hour limit. Before the refinement session, I also formatted slides for an earlier version of the video, wrote the [wiki decisions page](https://github.com/this-is-how-we-see/halvard-qc-churn/wiki) that the final video follows, and corrected one number in BACKLOG_001, and I didn't time that work. The invoice covers the 5:32 only, and the video recordings aren't in either total.
 
 ## How AI was used
 
