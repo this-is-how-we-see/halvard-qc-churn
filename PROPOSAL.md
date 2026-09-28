@@ -38,7 +38,7 @@ The plan uses 238 of 240 hours. We'd propose that any request over 2 hours gets 
 
 ## How we'd know it worked
 
-- On last year's data, the view flags 4.1.0 10 days after release.
+- On last year's data, the view flags 4.1.0 11 days after release.
 - The 49 HX-200s run 4.1.2 before their sites renew.
 - A flagged release comes off most affected instruments within 14 days, against a median of 30 days for 4.1.2.
 - The simulator pilot flags the 4.1.0 curve fit on the HX-200 before release.

@@ -15,12 +15,14 @@ Every HX-200 reports each run's QC result, and HaloCloud's fleet dashboard alrea
 A chart in HaloCloud's fleet information, for Halvard staff only, updated daily, with one line or bar per firmware, model and assay combination.
 
 - **Data:** `runs` (`instrument_id`, `run_date`, `assay_type`, `firmware_version`, `qc_status`) joined to `instruments` (`model`).
-- **Time range:** the trailing 7 days by default, recalculated each day. The user can change the range, and the flag rules apply to whatever range is selected.
+- **Time range:** the trailing 7 days by default, recalculated each day. The user can change the range, and the limit follows whatever range is selected.
 - **QC failure rate:** `fail / (pass + fail)`. Leave `skipped` out. Use firmware 4.0.0 and later only, because older firmware records a skipped QC step as `fail`.
 - **Baseline:** the model and assay failure rate on the previous validated firmware. For HX-200 with IA-Panel-3 on 4.0.x, that rate is 3.0%.
-- **Flags:** a window with fewer than 10 runs flags on any QC failure. A window with 10 or more runs flags when its failure rate is above 3 times the baseline. The rules are sensitive on purpose, because missing a defect cost far more last cycle than reviewing a false alarm.
+- **Limit:** the baseline plus 3 standard deviations for the window's run count, `baseline + 3 × √(baseline × (1 − baseline) / runs)`. This is a p-chart, the control chart a QC lab uses for a failure rate. The limit is wider when a window has few runs, so a small window needs a higher failure rate to flag. At about 200 runs a week, the HX-200 IA-Panel-3 limit is 6.6%, which agrees with the observed weekly range on validated firmware, whose upper limit is 6.2% (D13).
+- **Setting the baseline:** recalculated from the fleet's QC results each time Halvard validates a firmware version. A new model or assay uses the fleet rate for that assay on other models until 8 weeks of its own data exist.
+- **Override:** a Halvard quality lead can set the limit for one model and assay, for example from that assay's own acceptance criteria. The override records who set it, when and why, and the chart shows it beside the calculated limit. Each override is reviewed at the next firmware validation.
 
-The same rules already run as a backtest in `src/analysis.py` (Part D, D10), with every flagged day in `output/tables/monitor_backtest_flags.csv`.
+The same rule already runs as a backtest in `src/analysis.py` (Part D, D10), with every flagged day in `output/tables/monitor_backtest_flags.csv`.
 
 ## 3. Acceptance criteria
 
@@ -30,14 +32,24 @@ Given a user is in HaloCloud and viewing fleet information
 When the user selects QC data  
 Then a chart shows the QC failure rate for each firmware, model and assay combination over the last 7 days, against its baseline
 
-- Each combination shows its runs, failures, failure rate and baseline, updated daily.
-- A combination with fewer than 10 runs and at least one QC failure in the last 7 days shows as flagged.
-- A combination with 10 or more runs and a failure rate above 3 times its baseline in the last 7 days shows as flagged.
+- Each combination shows its runs, failures, failure rate, baseline and limit, updated daily.
+- A combination whose failure rate in the last 7 days is above its limit for that window's run count shows as flagged.
 - `skipped` runs and pre-4.0.0 firmware never enter a rate.
 - The user can change the time range, and the flags follow the selected range.
 - The user can set the chart to an earlier date.
-- With the 2025-09-01 to 2026-08-31 telemetry and the date set to 2025-11-15, the chart flags HX-200, IA-Panel-3, 4.1.0. Across that year, it flags HX-200 IA-Panel-3 on 4.1.0 or 4.1.1 on 390 of the 399 days either ran, matching the backtest.
-- The implementation pull request lists the other 230 flag episodes in the year, counted by combination, and `output/tables/monitor_backtest_flags.csv` already holds them by day. An episode is a run of consecutive flagged days for one combination.
+- With the 2025-09-01 to 2026-08-31 telemetry and the date set to 2025-11-16, the chart flags HX-200, IA-Panel-3, 4.1.0. Across that year, it flags HX-200 IA-Panel-3 on 4.1.0 or 4.1.1 on 387 of the 399 days either ran, matching the backtest.
+- The implementation pull request lists the other 79 flag episodes in the year, counted by combination, and `output/tables/monitor_backtest_flags.csv` already holds them by day. An episode is a run of consecutive flagged days for one combination.
+
+**AC2. Override a limit**
+
+Given a Halvard quality lead is viewing the QC chart  
+When the lead sets a limit for one model and assay and enters a reason  
+Then the chart flags that combination against the override limit
+
+- The chart shows the override limit beside the calculated limit, marked as an override.
+- The override records who set it, when and the reason, and any user of the chart can see them.
+- Only users on the override list can set or remove an override.
+- At the next firmware validation, the chart lists every override for review.
 
 ## 4. Scope
 
@@ -46,6 +58,6 @@ The immediate scope is the chart and its flags. Notifications, summaries, a lab-
 ## 5. Questions to settle before starting
 
 - **Telemetry source:** does HaloCloud receive telemetry from every instrument, or only from subscribing sites? Churned sites keep reporting runs, so the data exists either way.
-- **Flag load:** the backtest raises about 4 flag episodes a week across 60 combinations. The quality team confirms that load before release.
-- **Baseline for something new:** a new model or assay has no previous firmware. The working answer is the fleet rate for that assay on other models until 8 weeks of its own data exist.
+- **Flag load:** the backtest raises about 1.5 flag episodes a week across 60 combinations. The quality team confirms that load before release.
+- **Who can override a limit:** the working answer is Halvard's quality leads, with Dana agreeing the list.
 - **Access:** the working answer is Halvard's quality and product leads, agreed with Dana.

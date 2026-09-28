@@ -8,9 +8,9 @@
     ],
     "firmware_lr_chi2": 1645.925868074486,
     "firmware_p": 0.0,
-    "month_lr_chi2": 5.360522165201473,
+    "month_lr_chi2": 5.360522165202383,
     "month_df": 11,
-    "month_p": 0.912458125443838
+    "month_p": 0.9124581254437876
   },
   "lot_same_window": {
     "affected": [
@@ -273,16 +273,15 @@
     },
     "monitor_backtest": {
       "window_days": 7,
-      "small_window_runs": 10,
-      "rate_multiple": 3,
-      "first_flag_410": "2025-11-15",
-      "days_after_release": 10,
+      "limit_sd": 3,
+      "first_flag_410": "2025-11-16",
+      "days_after_release": 11,
       "defect_days_flagged": [
-        390,
+        387,
         399
       ],
-      "other_flag_episodes": 230,
-      "other_flag_episodes_per_week": 4.4,
+      "other_flag_episodes": 79,
+      "other_flag_episodes_per_week": 1.5,
       "combinations": 60
     },
     "still_on_affected_at_extract": {

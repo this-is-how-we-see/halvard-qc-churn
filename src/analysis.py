@@ -817,9 +817,10 @@ def follow_ups(con, results):
 
     # D10. Backtest of the fleet QC monitor in BACKLOG_001. Each day, for every firmware,
     # model and assay combination, count QC results over the trailing 7 days. Flag when the
-    # window has fewer than 10 runs and any failure, or 10 or more runs and a failure rate
-    # above 3 times the baseline (the model and assay rate on 4.0.0 and 4.0.2). No p-values:
-    # the rules are sensitive on purpose.
+    # failure rate is above the control limit: the baseline (the model and assay rate on
+    # 4.0.0 and 4.0.2) plus 3 standard deviations for the window's run count, as on a
+    # p-chart. The limit widens for a small window, so one failure in a few runs doesn't flag.
+    LIMIT_SD = 3
     daily = con.execute("""
         select i.model, r.assay_type as assay, r.firmware_version as fw, r.run_date as day,
                count(*) filter (where r.qc_status in ('pass', 'fail')) as n,
@@ -844,7 +845,8 @@ def follow_ups(con, results):
     roll = pd.concat(rows).merge(mbase, on=["model", "assay"])
     roll = roll[roll.n > 0]
     roll["rate"] = roll.f / roll.n
-    roll["flag"] = ((roll.n < 10) & (roll.f >= 1)) | ((roll.n >= 10) & (roll.rate > 3 * roll.baseline))
+    roll["limit"] = roll.baseline + LIMIT_SD * np.sqrt(roll.baseline * (1 - roll.baseline) / roll.n)
+    roll["flag"] = roll.rate > roll.limit
     defect = (roll.model == "HX-200") & (roll.assay == "IA-Panel-3") & roll.fw.isin(AFFECTED)
     flags = roll[roll.flag].copy()
     flags["defect"] = defect[roll.flag]
@@ -855,7 +857,7 @@ def follow_ups(con, results):
     first = roll[defect & roll.flag & (roll.fw == "4.1.0")].day.min()
     rel = pd.Timestamp(con.execute("select release_date from stg_firmware_releases where version = '4.1.0'").fetchone()[0])
     out["monitor_backtest"] = {
-        "window_days": 7, "small_window_runs": 10, "rate_multiple": 3,
+        "window_days": 7, "limit_sd": LIMIT_SD,
         "first_flag_410": str(first.date()), "days_after_release": int((first - rel).days),
         "defect_days_flagged": [int((defect & roll.flag).sum()), int(defect.sum())],
         "other_flag_episodes": int(new_episode.sum()),
