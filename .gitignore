@@ -6,3 +6,4 @@ data/
 output/*.duckdb
 output/*.duckdb.wal
 output/tables/sites_main.csv
+output/tables/exposed_sites_qc_ticket_response.csv
