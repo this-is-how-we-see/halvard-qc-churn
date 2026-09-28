@@ -79,6 +79,34 @@ def style(ax):
     ax.set_axisbelow(True)
 
 
+
+# Presentation figures share one format: 16:9, a takeaway title, a one-line subtitle,
+# a legend row, and a source line. Orange always means the affected firmware or the
+# problem; grey means the comparison; blue is a neutral trend over time.
+GREY = "#a8a6a0"
+
+
+def slide(title, subtitle, source, nrows=1, ncols=1, **kw):
+    fig, axes = plt.subplots(nrows, ncols, figsize=(12, 6.75), dpi=150, facecolor=SURFACE, **kw)
+    fig.text(0.04, 0.945, title, color=INK, fontsize=17, fontweight="bold", va="top")
+    fig.text(0.04, 0.885, subtitle, color=INK_2, fontsize=12, va="top")
+    fig.text(0.04, 0.025, source, color=INK_2, fontsize=9.5, va="bottom")
+    for ax in np.atleast_1d(axes).ravel():
+        style(ax)
+        ax.tick_params(labelsize=10.5)
+    return fig, axes
+
+
+def legend_row(fig, items, y=0.835):
+    # Coloured squares with labels, in a row under the subtitle, clear of the plots.
+    x = 0.04
+    for color, label in items:
+        fig.patches.append(matplotlib.patches.Rectangle((x, y - 0.012), 0.012, 0.022, color=color,
+                                                        transform=fig.transFigure, figure=fig))
+        fig.text(x + 0.018, y, label, color=INK, fontsize=10.5, va="center")
+        x += 0.018 + 0.0072 * len(label) + 0.03
+
+
 # ---------------------------------------------------------------- Part A
 
 def lot_test(con, results):
@@ -453,46 +481,50 @@ def customer_story(con, results):
         select date_trunc('week', cast(opened_ts as date))::date as week, count(*) as n
         from stg_support_tickets where category = 'qc_rejection' group by 1 order by 1
     """).df()
-    fig, axes = plt.subplots(3, 1, figsize=(10, 7.4), dpi=160, facecolor=SURFACE, sharex=True,
-                             gridspec_kw={"height_ratios": [3, 1.6, 1.1]})
-    lo, hi = pd.Timestamp(clear), pd.Timestamp(fix)
-    marks = [(pd.Timestamp(rel), "4.1.0 released"), (lo, "signal clear in telemetry"),
-             (pd.Timestamp(first_ticket), "first QC rejection ticket"), (hi, "4.1.2 fix released")]
-    for ax in axes:
-        style(ax)
-        ax.axvspan(lo, hi, color=ORANGE, alpha=0.10, linewidth=0, zorder=0)
-        for day, _ in marks:
-            ax.axvline(day, color=INK_2, linewidth=1, linestyle=(0, (3, 3)), zorder=1)
-    ax = axes[0]
-    ax.plot(pd.to_datetime(w.week), w.rate, color=BLUE, linewidth=2.2, zorder=3)
-    ax.set_ylim(0, 0.32)
-    ax.yaxis.set_major_formatter(matplotlib.ticker.PercentFormatter(1.0, decimals=0))
-    ax.set_title("HX-200 IA-Panel-3 QC failure rate, whole fleet, weekly", loc="left", color=INK,
-                 fontsize=10.5, fontweight="bold")
-    ypos = [0.315, 0.285, 0.255, 0.315]
-    for (day, label), y in zip(marks, ypos):
-        ax.text(day, y, f" {label}", color=INK, fontsize=8, va="top")
     cs = results["customer_story"]
-    ax.text(lo + (hi - lo) / 2, 0.02, f"{cs['days_signal_to_fix']} days visible but unfixed",
-            color=ORANGE, fontsize=9, fontweight="bold", ha="center")
+    lo, hi, r410 = pd.Timestamp(clear), pd.Timestamp(fix), pd.Timestamp(rel)
+    fig, axes = slide(f"The defect was visible for {cs['days_signal_to_fix']} days before the fix shipped",
+                      "HX-200 IA-Panel-3 QC failures, QC rejection tickets and lost renewals, by week",
+                      "Source: Halvard instrument telemetry, support tickets and subscriptions, September 2025 to "
+                      "August 2026. Shading starts the week the rise was statistically clear.",
+                      nrows=3, sharex=True, gridspec_kw={"height_ratios": [3, 1.5, 1]})
+    fig.subplots_adjust(top=0.78, bottom=0.14, left=0.07, right=0.96, hspace=0.55)
+    for ax in axes:
+        ax.axvspan(lo, hi, color=ORANGE, alpha=0.10, linewidth=0, zorder=0)
+        for day in (r410, hi):
+            ax.axvline(day, color=INK_2, linewidth=1, linestyle=(0, (3, 3)), zorder=1)
+    box = dict(facecolor=SURFACE, edgecolor="none", pad=1.5)
+    ax = axes[0]
+    ax.plot(pd.to_datetime(w.week), w.rate, color=BLUE, linewidth=2.4, zorder=3)
+    ax.set_ylim(0, 0.34)
+    ax.yaxis.set_major_formatter(matplotlib.ticker.PercentFormatter(1.0, decimals=0))
+    ax.set_title("A.  QC failure rate", loc="left", color=INK, fontsize=11.5, fontweight="bold")
+    ax.text(r410 - pd.Timedelta(days=3), 0.31, "4.1.0 released", color=INK, fontsize=10, ha="right",
+            va="center", bbox=box, zorder=4)
+    ax.text(hi + pd.Timedelta(days=3), 0.31, "4.1.2 fix released", color=INK, fontsize=10, ha="left",
+            va="center", bbox=box, zorder=4)
+    ax.text(lo + (hi - lo) / 2, 0.035, f"Clear in telemetry to fix: {cs['days_signal_to_fix']} days",
+            color=ORANGE, fontsize=11, fontweight="bold", ha="center", bbox=box, zorder=4)
     ax = axes[1]
-    ax.bar(pd.to_datetime(tk.week), tk.n, width=5, color=ORANGE, zorder=3)
-    ax.set_title("QC rejection tickets per week, all sites", loc="left", color=INK, fontsize=10.5,
-                 fontweight="bold")
+    ax.bar(pd.to_datetime(tk.week), tk.n, width=5, color=GREY, zorder=3)
+    ax.set_title("B.  QC rejection tickets", loc="left", color=INK, fontsize=11.5, fontweight="bold")
+    ax.set_ylim(0, tk.n.max() + 1.5)
+    ax.yaxis.set_major_locator(matplotlib.ticker.MultipleLocator(2))
+    ft = pd.Timestamp(first_ticket)
+    ax.annotate(f"First ticket, {(ft - r410).days} days after release", xy=(ft, 1), xytext=(ft - pd.Timedelta(days=62), 5.2),
+                color=INK, fontsize=10, va="center", arrowprops=dict(arrowstyle="-", color=INK_2, lw=0.8),
+                bbox=box, zorder=4)
     ax = axes[2]
-    for i, dday in enumerate(sorted(ex_ch.decision_date)):
-        ax.scatter(dday, 0.5, s=36, color="#e34948" if dday < hi else INK_2, zorder=3, linewidths=0)
+    before = [d for d in ex_ch.decision_date if d < hi]
+    after = [d for d in ex_ch.decision_date if d >= hi]
+    ax.scatter(before, [0.5] * len(before), s=42, color=ORANGE, zorder=3, linewidths=0)
+    ax.scatter(after, [0.5] * len(after), s=42, color=GREY, zorder=3, linewidths=0)
     ax.set_yticks([])
     ax.set_ylim(0, 1)
-    ax.set_title(f"Renewal decisions of the {cs['exposed_churned']} churned sites that ran the affected firmware "
-                 f"({cs['exposed_churned_before_fix']} before the fix)", loc="left", color=INK,
-                 fontsize=10.5, fontweight="bold")
+    ax.set_title(f"C.  Lost renewals at sites that ran the affected firmware: {len(before)} before the fix, "
+                 f"{len(after)} after", loc="left", color=INK, fontsize=11.5, fontweight="bold")
     axes[2].xaxis.set_major_locator(matplotlib.dates.MonthLocator())
     axes[2].xaxis.set_major_formatter(matplotlib.dates.DateFormatter("%b\n%Y"))
-    fig.text(0.01, 0.01, "Shaded: from the week the failure spike was statistically clear in fleet telemetry "
-             "(p < 0.001 against the 4.0.x baseline) to the 4.1.2 release. Red: decided before the fix.",
-             color=INK_2, fontsize=7.5)
-    fig.subplots_adjust(bottom=0.1, top=0.95, left=0.07, right=0.97, hspace=0.45)
     fig.savefig(FIG / "visible_before_fixed.png", facecolor=SURFACE)
     plt.close(fig)
 
@@ -501,33 +533,33 @@ def churn_figures(con, results):
     """Two figures that explain the comparison inside the figure itself."""
     s = pd.read_csv(TAB / "sites_main.csv")
     # Figure 1: churn by segment and by region, split by whether the site ran the affected firmware.
-    fig, axes = plt.subplots(1, 2, figsize=(10.5, 4.4), dpi=160, facecolor=SURFACE, sharey=True,
-                             gridspec_kw={"width_ratios": [3, 4]})
+    fig, axes = slide("Sites that ran the affected firmware lost more renewals, most of all in Europe",
+                      "Share of sites that did not renew at the last cycle",
+                      "Source: Halvard subscriptions and telemetry, 431 sites with 90 days of data before renewal.\n"
+                      "Site counts under each group: did not run it / ran it. Smaller groups vary more by chance.",
+                      ncols=2, sharey=True, gridspec_kw={"width_ratios": [3, 4]})
+    fig.subplots_adjust(top=0.75, bottom=0.21, left=0.06, right=0.97, wspace=0.08)
+    legend_row(fig, [(GREY, "Did not run the affected firmware"), (ORANGE, "Ran the affected firmware")])
+    names = {"hospital_lab": "Hospital labs", "reference_lab": "Reference labs", "research": "Research labs",
+             "EU": "Europe"}
     for ax, col, order, title in [
             (axes[0], "segment", ["hospital_lab", "reference_lab", "research"], "By segment"),
             (axes[1], "region", ["NA-East", "NA-West", "APAC", "EU"], "By region")]:
-        style(ax)
-        for j, (exp, color, label) in enumerate([("no", INK_2, "did not run the affected firmware"),
-                                                 ("yes", ORANGE, "ran the affected firmware")]):
+        counts = []
+        for j2, (exp, color) in enumerate([("no", GREY), ("yes", ORANGE)]):
             t = rate_table(s[s.affected_exposure == exp], col, "churn").set_index(col).reindex(order)
-            x = np.arange(len(order)) + (j - 0.5) * 0.28
-            ax.errorbar(x, t.rate, yerr=[t.rate - t.ci_low, t.ci_high - t.rate], fmt="none",
-                        ecolor=color, elinewidth=1.2, capsize=3, alpha=0.8)
-            ax.scatter(x, t.rate, s=46, color=color, zorder=3, label=label)
-            for xi, r, n in zip(x, t.rate, t.n):
-                ax.text(xi + 0.05, r, f" {r:.0%}", color=INK, fontsize=8, va="center")
+            x = np.arange(len(order)) + (j2 - 0.5) * 0.36
+            ax.bar(x, t.rate, width=0.34, color=color, zorder=3)
+            for xi, r in zip(x, t.rate):
+                ax.text(xi, r + 0.012, f"{r:.0%}", color=INK, fontsize=11, ha="center", va="bottom",
+                        fontweight="bold" if exp == "yes" else "normal")
+            counts.append(t.n.astype(int).tolist())
         ax.set_xticks(range(len(order)))
-        ax.set_xticklabels([o.replace("_", " ") for o in order], fontsize=9, color=INK)
-        ax.set_title(title, loc="left", color=INK, fontsize=10.5, fontweight="bold")
+        ax.set_xticklabels([f"{names.get(o, o)}\n{a} / {b} sites" for o, a, b in zip(order, *counts)],
+                           fontsize=10.5, color=INK)
+        ax.set_title(title, loc="left", color=INK, fontsize=12, fontweight="bold")
         ax.yaxis.set_major_formatter(matplotlib.ticker.PercentFormatter(1.0, decimals=0))
-    axes[0].set_ylim(0, 0.62)
-    axes[0].legend(loc="upper left", frameon=False, fontsize=8.5, labelcolor=INK)
-    fig.suptitle("Churn rate at the last renewal: the affected firmware roughly doubles it in every segment",
-                 x=0.01, ha="left", color=INK, fontsize=11.5, fontweight="bold")
-    fig.text(0.01, 0.01, "Main cohort, 431 sites. Each dot is the share of sites in that group that did not renew. "
-             "Bars: 95% Wilson intervals. NA-East is the one group where the firmware made no difference.",
-             color=INK_2, fontsize=7.5)
-    fig.subplots_adjust(bottom=0.16, top=0.86, left=0.06, right=0.98, wspace=0.08)
+    axes[0].set_ylim(0, 0.5)
     fig.savefig(FIG / "churn_by_segment_region.png", facecolor=SURFACE)
     plt.close(fig)
 
